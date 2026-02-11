@@ -1,7 +1,11 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
+import { getCenterPointFromEvent } from '../utils/centerPoint';
+import { createGainNode } from '../audio/nodeFactories';
+import { useAudioContext } from '../audio/AudioContextProvider';
 
-function Output({ handleOutput, audioContext }) {
-    const gainNode = useRef(audioContext.createGain());
+function Output({ handleOutput }) {
+    const audioContext = useAudioContext();
+    const gainNode = useRef(createGainNode(audioContext, 0.5));
     const [value, setValue] = useState(0.5);
 
     useEffect(() => {
@@ -9,18 +13,10 @@ function Output({ handleOutput, audioContext }) {
     }, [audioContext]);
 
     const onOutput = (event) => {
-        const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
-        const el = event.target.getBoundingClientRect();
-        const x = el.x;
-        const y = el.y;
-        const bottom = el.bottom;
-        const right = el.right;
-        const xCenter = (right - x) / 2 + x - largerDim * 0.04;
-        const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
-
+        const center = getCenterPointFromEvent(event);
         handleOutput({
             tomyKey: 'Output',
-            toLocation: { x: xCenter, y: yCenter },
+            toLocation: center,
             audio: gainNode.current,
         });
     };
@@ -42,13 +38,21 @@ function Output({ handleOutput, audioContext }) {
                     max="1"
                     step=".05"
                     onChange={handleChange}
+                    aria-label="Master volume"
                 ></input>
             </div>
-            <div className="cordOuter" onClick={onOutput}>
+            <div
+                className="cordOuter"
+                role="button"
+                aria-label="Connect to Output"
+                tabIndex={0}
+                onClick={onOutput}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}
+            >
                 <div className="cordInner" id={'Output' + 'inputInner'}></div>
             </div>
         </div>
     );
 }
 
-export default Output;
+export default memo(Output);

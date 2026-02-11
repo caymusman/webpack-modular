@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import Oscillator from './modules/Oscillator';
 import Gain from './modules/Gain';
 import Filter from './modules/Filter';
@@ -9,6 +9,7 @@ import Distortion from './modules/Distortion';
 import Reverb from './modules/Reverb';
 import AudioInput from './modules/AudioInput';
 import Recorder from './modules/Recorder';
+import { getCenterPointFromEvent } from '../utils/centerPoint';
 
 function Area({
     myKey,
@@ -19,7 +20,6 @@ function Area({
     addPatch,
     handleOutput,
     inputOnly,
-    audioContext,
     alert,
 }) {
     const [audio, setAudio] = useState({});
@@ -31,17 +31,10 @@ function Area({
     const handleCreatePatch = useCallback(
         (event) => {
             if (!outputMode) {
-                const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
-                const el = event.target.getBoundingClientRect();
-                const x = el.x;
-                const y = el.y;
-                const bottom = el.bottom;
-                const right = el.right;
-                const xCenter = (right - x) / 2 + x - largerDim * 0.04;
-                const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
+                const center = getCenterPointFromEvent(event);
                 addPatch({
                     fromModID: myKey,
-                    fromLocation: { x: xCenter, y: yCenter },
+                    fromLocation: center,
                     audio: audio,
                 });
             }
@@ -51,18 +44,10 @@ function Area({
 
     const onOutput = useCallback(
         (event) => {
-            const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
-            const el = event.target.getBoundingClientRect();
-            const x = el.x;
-            const y = el.y;
-            const bottom = el.bottom;
-            const right = el.right;
-            const xCenter = (right - x) / 2 + x - largerDim * 0.04;
-            const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
-
+            const center = getCenterPointFromEvent(event);
             handleOutput({
                 tomyKey: myKey,
-                toLocation: { x: xCenter, y: yCenter },
+                toLocation: center,
                 audio: audio,
             });
         },
@@ -78,7 +63,6 @@ function Area({
             case 'Oscillator':
                 return (
                     <Oscillator
-                        audioContext={audioContext}
                         createAudio={createAudio}
                         parent={myKey}
                         handleOutput={handleOutput}
@@ -87,35 +71,33 @@ function Area({
             case 'Gain':
                 return (
                     <Gain
-                        audioContext={audioContext}
                         createAudio={createAudio}
                         parent={myKey}
                         handleOutput={handleOutput}
                     />
                 );
             case 'Filter':
-                return <Filter audioContext={audioContext} createAudio={createAudio} />;
+                return <Filter createAudio={createAudio} />;
             case 'Panner':
-                return <Panner audioContext={audioContext} createAudio={createAudio} />;
+                return <Panner createAudio={createAudio} />;
             case 'ADSR':
-                return <ADSR audioContext={audioContext} createAudio={createAudio} />;
+                return <ADSR createAudio={createAudio} />;
             case 'Delay':
-                return <Delay audioContext={audioContext} createAudio={createAudio} />;
+                return <Delay createAudio={createAudio} />;
             case 'Distortion':
-                return <Distortion audioContext={audioContext} createAudio={createAudio} />;
+                return <Distortion createAudio={createAudio} />;
             case 'Reverb':
-                return <Reverb audioContext={audioContext} createAudio={createAudio} />;
+                return <Reverb createAudio={createAudio} />;
             case 'AudioInput':
                 return (
                     <AudioInput
                         alert={alert}
                         handleClose={onClose}
-                        audioContext={audioContext}
                         createAudio={createAudio}
                     />
                 );
             case 'Recorder':
-                return <Recorder audioContext={audioContext} createAudio={createAudio} />;
+                return <Recorder createAudio={createAudio} />;
             default:
                 return <div>Hahahahaha theres nothing here!</div>;
         }
@@ -124,7 +106,7 @@ function Area({
     return (
         <div className="moduleDiv">
             <p id="modTitle">
-                <i className="fa fa-times" aria-hidden="true" onClick={onClose}></i>
+                <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn"><i className="fa fa-times" aria-hidden="true"></i></button>
                 {name}
             </p>
 
@@ -135,17 +117,25 @@ function Area({
             <div
                 className={outputMode ? 'cordOuter hide' : 'cordOuter show interactive'}
                 id="outputOuter"
+                role="button"
+                aria-label={'Connect from ' + name}
+                tabIndex={0}
                 onClick={handleCreatePatch}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCreatePatch(e); } }}
             >
                 <div className="cordInner" id={myKey + 'outputInner'}></div>
             </div>
             {/*output patch cords area*/}
 
-            {inputOnly === 'false' && (
+            {!inputOnly && (
                 <div
                     className={outputMode ? 'cordOuter show raise interactive' : 'cordOuter show'}
                     id="inputOuter"
+                    role="button"
+                    aria-label={'Connect to ' + name}
+                    tabIndex={0}
                     onClick={onOutput}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}
                 >
                     <div className="cordInner" id={myKey + 'inputInner'}></div>
                 </div>
@@ -154,4 +144,4 @@ function Area({
     );
 }
 
-export default Area;
+export default memo(Area);

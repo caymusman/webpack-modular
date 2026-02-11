@@ -1,11 +1,12 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import App from '../App';
+import { renderWithAudioContext } from './testUtils';
 
 describe('App', () => {
     let app;
 
     beforeEach(() => {
-        app = render(<App />);
+        app = renderWithAudioContext(<App />);
     });
 
     test('renders main layout', () => {
@@ -39,7 +40,7 @@ describe('App', () => {
 
 describe('Module creation', () => {
     test('clicking sidebar button creates a module', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -48,7 +49,7 @@ describe('Module creation', () => {
     });
 
     test('clicking button twice creates two modules', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const gainButton = screen.getByRole('button', { name: 'Gain' });
         fireEvent.click(gainButton);
         fireEvent.click(gainButton);
@@ -58,7 +59,7 @@ describe('Module creation', () => {
     });
 
     test('module displays its type name', () => {
-        render(<App />);
+        renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -69,7 +70,7 @@ describe('Module creation', () => {
     });
 
     test('created module has input cord area', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -78,7 +79,7 @@ describe('Module creation', () => {
     });
 
     test('Gain module has output cord area (inputOnly=false)', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const gainButton = screen.getByRole('button', { name: 'Gain' });
         fireEvent.click(gainButton);
 
@@ -87,7 +88,7 @@ describe('Module creation', () => {
     });
 
     test('Oscillator module does NOT have output cord area (inputOnly=true)', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -100,7 +101,7 @@ describe('Module creation', () => {
 
 describe('Module deletion', () => {
     test('clicking close icon removes a module', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const gainButton = screen.getByRole('button', { name: 'Gain' });
         fireEvent.click(gainButton);
 
@@ -114,7 +115,7 @@ describe('Module deletion', () => {
     });
 
     test('deleting one module preserves others', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const gainButton = screen.getByRole('button', { name: 'Gain' });
         const filterButton = screen.getByRole('button', { name: 'Filter' });
         fireEvent.click(gainButton);
@@ -132,7 +133,7 @@ describe('Module deletion', () => {
 
 describe('Patch cord validation', () => {
     test('entering patch mode shows cancel button', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -146,7 +147,7 @@ describe('Patch cord validation', () => {
     });
 
     test('cancelling patch mode hides cancel button', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
 
@@ -162,7 +163,7 @@ describe('Patch cord validation', () => {
     });
 
     test('alert shows and can be dismissed', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         // Create an oscillator
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
@@ -182,14 +183,14 @@ describe('Patch cord validation', () => {
 
 describe('Output module', () => {
     test('output has volume slider', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const slider = container.querySelector('#gainSlider');
         expect(slider).toBeTruthy();
         expect(slider.type).toBe('range');
     });
 
     test('output volume slider changes value', () => {
-        const { container } = render(<App />);
+        const { container } = renderWithAudioContext(<App />);
         const slider = container.querySelector('#gainSlider');
         fireEvent.change(slider, { target: { value: '0.8' } });
         expect(slider.value).toBe('0.8');

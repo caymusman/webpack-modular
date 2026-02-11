@@ -1,15 +1,19 @@
 import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
+import { setPanValue } from '../../audio/nodeHelpers';
+import { createPannerNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Panner({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createStereoPanner());
+function Panner({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createPannerNode(audioContext));
 
     useEffect(() => {
         createAudio(audio.current);
     }, [createAudio]);
 
     const handlePan = (val) => {
-        audio.current.pan.value = val;
+        setPanValue(audio.current, val);
     };
 
     return (

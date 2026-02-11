@@ -1,7 +1,9 @@
+@use 'sass:color';
+
 $dark: #555;
 $light: #ddd;
-$cancelRed: darken(red, 30%);
-$darkGreen: lighten(#013220, 5%);
+$cancelRed: color.adjust(red, $lightness: -30%);
+$darkGreen: color.adjust(#013220, $lightness: 5%);
 $mainPurple: #b6a8b5;
 
 html,
@@ -38,6 +40,15 @@ body {
 
 .interactive {
     cursor: pointer;
+}
+
+.iconBtn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    font-size: inherit;
 }
 
 #mainDiv {
@@ -245,8 +256,8 @@ body {
                 background-color 0.3s,
                 color 0.3s;
             &:hover {
-                background-color: lighten($dark, 10%);
-                color: lighten($light, 10%);
+                background-color: color.adjust($dark, $lightness: 10%);
+                color: color.adjust($light, $lightness: 10%);
             }
             &:hover {
                 .fa-times {
@@ -329,7 +340,7 @@ body {
         padding: 3px;
 
         &:hover {
-            background: lighten($dark, 10%);
+            background: color.adjust($dark, $lightness: 10%);
             cursor: pointer;
         }
     }
@@ -359,7 +370,7 @@ body {
     }
 
     #rangeNum {
-        background: lighten($dark, 10%);
+        background: color.adjust($dark, $lightness: 10%);
         color: $light;
         width: 29%;
         position: relative;
@@ -560,7 +571,7 @@ body {
         transform: translate(-50%, -50%);
         visibility: 1;
         opacity: 1;
-        background-color: lighten($dark, 20%);
+        background-color: color.adjust($dark, $lightness: 20%);
         width: 14px;
         height: 14px;
     }
@@ -587,7 +598,7 @@ body {
             height: 100%;
         }
         input[type='range']::-webkit-slider-thumb {
-            border: 2px solid lighten($dark, 10%);
+            border: 2px solid color.adjust($dark, $lightness: 10%);
             border-radius: 50%;
             margin-top: -4.5%;
             height: 12px;
@@ -613,7 +624,7 @@ body {
     position: absolute;
     width: 15px;
     height: 15px;
-    background-color: lighten($dark, 20%);
+    background-color: color.adjust($dark, $lightness: 20%);
     border-radius: 50%;
     transition:
         transform 0.6s,
@@ -720,7 +731,7 @@ input:focus {
     visibility: hidden;
     width: 60px;
     font-size: 12px;
-    background-color: lighten($dark, 10%);
+    background-color: color.adjust($dark, $lightness: 10%);
     color: $light;
     text-align: center;
     border-radius: 6px;
@@ -828,7 +839,7 @@ input:focus {
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: lighten($dark, 10%) transparent transparent transparent;
+    border-color: color.adjust($dark, $lightness: 10%) transparent transparent transparent;
 }
 
 // ---------------------------------RANGE INPUTS ------------------------------
@@ -847,10 +858,10 @@ input[type='range']::-webkit-slider-runnable-track {
     cursor: pointer;
     background: $dark;
     border-radius: 3px;
-    border: 0.2px solid lighten($dark, 10%);
+    border: 0.2px solid color.adjust($dark, $lightness: 10%);
 }
 input[type='range']::-webkit-slider-thumb {
-    border: 2px solid lighten($dark, 10%);
+    border: 2px solid color.adjust($dark, $lightness: 10%);
     border-radius: 50%;
     background: $light;
     cursor: pointer;
@@ -867,10 +878,10 @@ input[type='range']::-moz-range-track {
     background: $dark;
     height: 100%;
     border-radius: 3px;
-    border: 0.2px solid lighten($dark, 10%);
+    border: 0.2px solid color.adjust($dark, $lightness: 10%);
 }
 input[type='range']::-moz-range-thumb {
-    border: 2px solid lighten($dark, 10%);
+    border: 2px solid color.adjust($dark, $lightness: 10%);
     border-radius: 50%;
     background: $light;
     cursor: pointer;
@@ -995,7 +1006,7 @@ button {
     border-radius: 3px;
 
     &:active {
-        background-color: darken($dark, 10%);
+        background-color: color.adjust($dark, $lightness: -10%);
     }
 }
 

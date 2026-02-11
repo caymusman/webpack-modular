@@ -1,15 +1,19 @@
 import { useRef, useEffect, useCallback } from 'react';
 import Selector from '../ui/Selector';
+import { setConvolverBuffer } from '../../audio/nodeHelpers';
+import { createConvolverNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Reverb({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createConvolver());
+function Reverb({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createConvolverNode(audioContext));
 
     const updateBuffer = useCallback(
         (path) => {
             fetch(path)
                 .then((res) => res.arrayBuffer())
                 .then((buffer) => audioContext.decodeAudioData(buffer))
-                .then((final) => (audio.current.buffer = final));
+                .then((final) => setConvolverBuffer(audio.current, final));
         },
         [audioContext]
     );

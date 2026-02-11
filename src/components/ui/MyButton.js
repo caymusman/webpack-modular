@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { makeModuleId } from '../../utils/moduleId';
 
 function MyButton({ name, handleClick, inputOnly, audioIn }) {
     const [count, setCount] = useState(0);
@@ -7,12 +8,12 @@ function MyButton({ name, handleClick, inputOnly, audioIn }) {
         if (audioIn) {
             return;
         }
-        handleClick(name + ' ' + count, name, inputOnly);
+        handleClick(makeModuleId(name, count), name, inputOnly);
         setCount((c) => c + 1);
     };
 
     return (
-        <button className="addBtn" onClick={onClick}>
+        <button className="addBtn" onClick={onClick} disabled={audioIn}>
             {name}
         </button>
     );

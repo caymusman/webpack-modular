@@ -50,6 +50,7 @@ function Dial({ name, min, max, onChange }) {
                     max="1"
                     step=".001"
                     onChange={handleChange}
+                    aria-label={name}
                 ></input>
                 <div id="dialEmpty" style={rotStyle}></div>
             </div>
@@ -63,6 +64,7 @@ function Dial({ name, min, max, onChange }) {
                         handleNumSubmit();
                     }
                 }}
+                aria-label={name + ' value'}
             ></input>
         </div>
     );

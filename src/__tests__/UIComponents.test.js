@@ -1,15 +1,15 @@
-import { render, fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import App from '../App';
+import { renderWithAudioContext } from './testUtils';
 
 // The UI components (Slider, LogSlider, Dial, etc.) are not exported individually,
 // so we test them through their parent modules rendered via App.
 
 describe('Slider (via Gain module)', () => {
     let container;
-    const setAudioMock = jest.fn();
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         // Create a Gain module which uses a plain Slider
         const gainButton = screen.getByRole('button', { name: 'Gain' });
@@ -62,7 +62,7 @@ describe('Slider (via Filter module)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const filterButton = screen.getByRole('button', { name: 'Filter' });
         fireEvent.click(filterButton);
@@ -85,7 +85,7 @@ describe('Slider (via Delay module)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const delayButton = screen.getByRole('button', { name: 'Delay' });
         fireEvent.click(delayButton);
@@ -108,7 +108,7 @@ describe('Slider (via Panner module)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const pannerButton = screen.getByRole('button', { name: 'Panner' });
         fireEvent.click(pannerButton);
@@ -131,7 +131,7 @@ describe('LogSlider (via Oscillator module)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
@@ -165,7 +165,7 @@ describe('Selector (via Oscillator waveform)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
@@ -204,7 +204,7 @@ describe('Selector (via Filter type)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const filterButton = screen.getByRole('button', { name: 'Filter' });
         fireEvent.click(filterButton);
@@ -227,7 +227,7 @@ describe('Selector (via Reverb)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const reverbButton = screen.getByRole('button', { name: 'Reverb' });
         fireEvent.click(reverbButton);
@@ -251,7 +251,7 @@ describe('Oscillator LFO toggle', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const oscButton = screen.getByRole('button', { name: 'Oscillator' });
         fireEvent.click(oscButton);
@@ -287,7 +287,7 @@ describe('ADSR TextInput controls', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const adsrButton = screen.getByRole('button', { name: 'ADSR' });
         fireEvent.click(adsrButton);
@@ -336,7 +336,7 @@ describe('Recorder module', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const recorderButton = screen.getByRole('button', { name: 'Recorder' });
         fireEvent.click(recorderButton);
@@ -363,7 +363,7 @@ describe('Distortion module', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const distButton = screen.getByRole('button', { name: 'Distortion' });
         fireEvent.click(distButton);
@@ -389,7 +389,7 @@ describe('Dial (via Filter Q)', () => {
     let container;
 
     beforeEach(() => {
-        const result = render(<App />);
+        const result = renderWithAudioContext(<App />);
         container = result.container;
         const filterButton = screen.getByRole('button', { name: 'Filter' });
         fireEvent.click(filterButton);

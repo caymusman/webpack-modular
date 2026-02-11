@@ -1,7 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
+import { makeParamKey } from '../../utils/moduleId';
+import { getCenterPointFromEvent } from '../../utils/centerPoint';
+import { createGainNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Gain({ audioContext, createAudio, parent, handleOutput }) {
-    const audio = useRef(audioContext.createGain());
+function Gain({ createAudio, parent, handleOutput }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createGainNode(audioContext, 0.5));
     const [value, setValue] = useState(0.5);
     const [num, setNum] = useState(0.5);
     const max = 1;
@@ -9,7 +14,6 @@ function Gain({ audioContext, createAudio, parent, handleOutput }) {
 
     useEffect(() => {
         createAudio(audio.current);
-        audio.current.gain.setValueAtTime(0.5, audioContext.currentTime);
     }, [createAudio, audioContext]);
 
     const handleGainChange = (event) => {
@@ -43,18 +47,10 @@ function Gain({ audioContext, createAudio, parent, handleOutput }) {
     };
 
     const onOutput = (event) => {
-        const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
-        const el = event.target.getBoundingClientRect();
-        const x = el.x;
-        const y = el.y;
-        const bottom = el.bottom;
-        const right = el.right;
-        const xCenter = (right - x) / 2 + x - largerDim * 0.04;
-        const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
-
+        const center = getCenterPointFromEvent(event);
         handleOutput({
-            tomyKey: parent + ' param',
-            toLocation: { x: xCenter, y: yCenter },
+            tomyKey: makeParamKey(parent),
+            toLocation: center,
             audio: audio.current.gain,
         });
     };
@@ -82,8 +78,8 @@ function Gain({ audioContext, createAudio, parent, handleOutput }) {
                 }}
             ></input>
 
-            <div className="cordOuter tooltip" id="firstParam" onClick={onOutput}>
-                <div className="cordInner" id={parent + ' param' + ' inputInner'}>
+            <div className="cordOuter tooltip" id="firstParam" role="button" aria-label="Connect to gain param" tabIndex={0} onClick={onOutput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}>
+                <div className="cordInner" id={makeParamKey(parent) + ' inputInner'}>
                     <span id="gainGainParamTip" className="tooltiptext">
                         <span className="paramSpan">param: </span>gain
                     </span>

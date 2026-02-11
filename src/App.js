@@ -4,6 +4,8 @@ import Area from './components/Area';
 import Cord from './components/Cord';
 import Output from './components/Output';
 import SideButtons from './components/SideButtons';
+import { getModuleType, getBaseModuleId } from './utils/moduleId';
+import { getCenterPoint } from './utils/centerPoint';
 
 export default function App() {
     const [list, setList] = useState(new Map());
@@ -14,7 +16,6 @@ export default function App() {
     const [cordCombos, setCordCombos] = useState({});
     const [alert, setAlert] = useState(false);
     const [pingText, setPingText] = useState('');
-    const [audioContext] = useState(() => new AudioContext());
     const [audioIn, setAudioIn] = useState(false);
     const nodeRef = useRef(null);
 
@@ -40,7 +41,7 @@ export default function App() {
             if (outputMode) {
                 handlePatchExit();
             }
-            if (childKey.split(' ')[0] === 'AudioInput') {
+            if (getModuleType(childKey) === 'AudioInput') {
                 setAudioIn(true);
             }
             setCordCombos((prev) => ({ ...prev, [childKey]: [] }));
@@ -49,7 +50,7 @@ export default function App() {
                 newMap.set(childKey, {
                     myKey: childKey,
                     filling: childJSX,
-                    name: childKey.split(' ')[0],
+                    name: getModuleType(childKey),
                     inputOnly: inputOnly,
                 });
                 return newMap;
@@ -65,7 +66,7 @@ export default function App() {
             return newMap;
         });
 
-        if (childKey.split(' ')[0] === 'AudioInput') {
+        if (getModuleType(childKey) === 'AudioInput') {
             setAudioIn(false);
         }
 
@@ -78,7 +79,7 @@ export default function App() {
                 }
                 if (
                     el.toData.tomyKey === childKey ||
-                    el.toData.tomyKey.split(' ')[0] + ' ' + el.toData.tomyKey.split(' ')[1] === childKey
+                    getBaseModuleId(el.toData.tomyKey) === childKey
                 ) {
                     toRemove.push(el);
                     el.fromData.audio.disconnect(el.toData.audio);
@@ -185,39 +186,19 @@ export default function App() {
 
     const handleDrag = useCallback(
         (modID) => {
-            const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
             const newCords = [...patchCords];
             newCords.forEach((el) => {
                 if (el.fromData.fromModID === modID) {
-                    const in_el = document.getElementById(modID + 'outputInner').getBoundingClientRect();
-                    const in_x = in_el.x;
-                    const in_y = in_el.y;
-                    const in_bottom = in_el.bottom;
-                    const in_right = in_el.right;
-                    const in_xCenter = (in_right - in_x) / 2 + in_x - largerDim * 0.04;
-                    const in_yCenter = (in_bottom - in_y) / 2 + in_y - largerDim * 0.04;
-                    el.fromData.fromLocation = { x: in_xCenter, y: in_yCenter };
+                    el.fromData.fromLocation = getCenterPoint(document.getElementById(modID + 'outputInner'));
                 } else if (el.toData.tomyKey === modID) {
-                    const to_el = document.getElementById(modID + 'inputInner').getBoundingClientRect();
-                    const to_x = to_el.x;
-                    const to_y = to_el.y;
-                    const to_bottom = to_el.bottom;
-                    const to_right = to_el.right;
-                    const to_xCenter = (to_right - to_x) / 2 + to_x - largerDim * 0.04;
-                    const to_yCenter = (to_bottom - to_y) / 2 + to_y - largerDim * 0.04;
-                    el.toData.toLocation = { x: to_xCenter, y: to_yCenter };
+                    el.toData.toLocation = getCenterPoint(document.getElementById(modID + 'inputInner'));
                 } else if (
                     el.toData.tomyKey.includes(' ') &&
-                    el.toData.tomyKey.split(' ')[0] + ' ' + el.toData.tomyKey.split(' ')[1] === modID
+                    getBaseModuleId(el.toData.tomyKey) === modID
                 ) {
-                    const to_el = document.getElementById(el.toData.tomyKey + ' inputInner').getBoundingClientRect();
-                    const to_x = to_el.x;
-                    const to_y = to_el.y;
-                    const to_bottom = to_el.bottom;
-                    const to_right = to_el.right;
-                    const to_xCenter = (to_right - to_x) / 2 + to_x - largerDim * 0.04;
-                    const to_yCenter = (to_bottom - to_y) / 2 + to_y - largerDim * 0.04;
-                    el.toData.toLocation = { x: to_xCenter, y: to_yCenter };
+                    el.toData.toLocation = getCenterPoint(
+                        document.getElementById(el.toData.tomyKey + ' inputInner')
+                    );
                 }
             });
 
@@ -227,30 +208,33 @@ export default function App() {
     );
 
     const handleResize = useCallback(() => {
-        const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
         setPatchCords((prevCords) => {
             const newCords = [...prevCords];
             newCords.forEach((el) => {
-                const fromID = el.fromData.fromModID;
-                const in_el = document.getElementById(fromID + 'outputInner').getBoundingClientRect();
-                const in_xCenter = (in_el.right - in_el.x) / 2 + in_el.x - largerDim * 0.04;
-                const in_yCenter = (in_el.bottom - in_el.y) / 2 + in_el.y - largerDim * 0.04;
-                el.fromData.fromLocation = { x: in_xCenter, y: in_yCenter };
-
-                const toID = el.toData.tomyKey;
-                const out_el = document.getElementById(toID + 'inputInner').getBoundingClientRect();
-                const out_xCenter = (out_el.right - out_el.x) / 2 + out_el.x - largerDim * 0.04;
-                const out_yCenter = (out_el.bottom - out_el.y) / 2 + out_el.y - largerDim * 0.04;
-                el.toData.toLocation = { x: out_xCenter, y: out_yCenter };
+                el.fromData.fromLocation = getCenterPoint(
+                    document.getElementById(el.fromData.fromModID + 'outputInner')
+                );
+                el.toData.toLocation = getCenterPoint(
+                    document.getElementById(el.toData.tomyKey + 'inputInner')
+                );
             });
             return newCords;
         });
     }, []);
 
     useEffect(() => {
-        window.addEventListener('resize', handleResize);
+        let rafId = null;
+        const throttledResize = () => {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                handleResize();
+                rafId = null;
+            });
+        };
+        window.addEventListener('resize', throttledResize);
         return () => {
-            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('resize', throttledResize);
+            if (rafId) cancelAnimationFrame(rafId);
         };
     }, [handleResize]);
 
@@ -280,20 +264,20 @@ export default function App() {
                 <SideButtons id="sideButtons" handleClick={handleClick} audioIn={audioIn} />
             </div>
             <div id="playSpace">
-                <svg id="patchCords">{cords}</svg>
+                <svg id="patchCords" aria-label="Patch cord connections">{cords}</svg>
                 <div className={alert ? 'show pingBox' : 'hide pingBox'}>
                     <div id="pingTextDiv">
                         <h3 className="error">Not so fast!</h3>
                     </div>
                     <p id="pingText">{pingText}</p>
-                    <i id="pingExit" onClick={handlePingExit} className="fa fa-times-circle" aria-hidden="true"></i>
+                    <button id="pingExit" onClick={handlePingExit} aria-label="Dismiss alert" className="iconBtn"><i className="fa fa-times-circle" aria-hidden="true"></i></button>
                 </div>
-                <i
+                <button
                     id="patchExit"
                     onClick={handlePatchExit}
-                    className={outputMode ? 'show fa fa-times-circle' : 'hide fa fa-times-circle'}
-                    aria-hidden="true"
-                ></i>
+                    aria-label="Cancel patch"
+                    className={outputMode ? 'show iconBtn' : 'hide iconBtn'}
+                ><i className="fa fa-times-circle" aria-hidden="true"></i></button>
 
                 {[...list].map(([key, { myKey, filling, name, inputOnly }]) => {
                     return (
@@ -317,14 +301,13 @@ export default function App() {
                                     addPatch={addCord}
                                     handleOutput={handleOutput}
                                     inputOnly={inputOnly}
-                                    audioContext={audioContext}
                                     alert={myAlert}
                                 />
                             </div>
                         </Draggable>
                     );
                 })}
-                <Output handleOutput={handleOutput} audioContext={audioContext} />
+                <Output handleOutput={handleOutput} />
             </div>
         </div>
     );

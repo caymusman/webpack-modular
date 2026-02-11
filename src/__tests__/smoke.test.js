@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react';
 import App from '../App';
+import { renderWithAudioContext } from './testUtils';
 
 test('App renders without crashing', () => {
-    const { container } = render(<App />);
+    const { container } = renderWithAudioContext(<App />);
     expect(container.querySelector('#mainDiv')).toBeTruthy();
 });

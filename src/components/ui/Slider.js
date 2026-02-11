@@ -44,6 +44,7 @@ function Slider({ labelName, tooltipText, min, max, step, setAudio }) {
                 max={max}
                 step={step}
                 onChange={handleRangeChange}
+                aria-label={tooltipText}
             ></input>
             <input
                 id={labelName + 'Number'}
@@ -55,6 +56,7 @@ function Slider({ labelName, tooltipText, min, max, step, setAudio }) {
                         handleNumSubmit();
                     }
                 }}
+                aria-label={tooltipText + ' value'}
             ></input>
             <span id={labelName + 'Span'} className="tooltiptext">
                 {tooltipText}

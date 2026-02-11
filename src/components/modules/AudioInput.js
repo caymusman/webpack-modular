@@ -1,8 +1,11 @@
 import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
+import { createGainNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function AudioInput({ alert, handleClose, audioContext, createAudio }) {
-    const outputGain = useRef(audioContext.createGain());
+function AudioInput({ alert, handleClose, createAudio }) {
+    const audioContext = useAudioContext();
+    const outputGain = useRef(createGainNode(audioContext, 0.5));
     const mediaStream = useRef(null);
 
     useEffect(() => {
@@ -14,16 +17,15 @@ function AudioInput({ alert, handleClose, audioContext, createAudio }) {
                     mediaStream.current = stream;
                     const audio = audioContext.createMediaStreamSource(stream);
                     audio.connect(gainNode);
-                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
                     createAudio(gainNode);
                 })
                 .catch((err) => {
-                    console.warn('When setting up media devices, I caught: \n' + err); // eslint-disable-line no-console
+                    console.warn('When setting up media devices, I caught: \n' + err);
                     handleClose();
                     alert('You denied audio permissions. Allow permissions to create this module.');
                 });
         } else {
-            console.warn('Media Devices are not supported!'); // eslint-disable-line no-console
+            console.warn('Media Devices are not supported!');
             handleClose();
             alert('Media Devices are not supported.');
         }

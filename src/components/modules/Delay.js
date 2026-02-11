@@ -1,8 +1,11 @@
 import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
+import { createDelayNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Delay({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createDelay(5.0));
+function Delay({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createDelayNode(audioContext, 5.0));
 
     useEffect(() => {
         createAudio(audio.current);

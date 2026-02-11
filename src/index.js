@@ -1,6 +1,11 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import './App.css';
+import { AudioContextProvider } from './audio/AudioContextProvider';
+import './App.scss';
 
 const root = createRoot(document.getElementById('app'));
-root.render(<App />);
+root.render(
+    <AudioContextProvider>
+        <App />
+    </AudioContextProvider>
+);

@@ -2,10 +2,16 @@ import { useRef, useState, useEffect } from 'react';
 import Selector from '../ui/Selector';
 import LogSlider from '../ui/LogSlider';
 import Slider from '../ui/Slider';
+import { makeParamKey } from '../../utils/moduleId';
+import { getCenterPointFromEvent } from '../../utils/centerPoint';
+import { setNodeType } from '../../audio/nodeHelpers';
+import { createOscillatorNode, createGainNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
-    const audio = useRef(audioContext.createOscillator());
-    const modulatorGain = useRef(audioContext.createGain());
+function Oscillator({ createAudio, parent, handleOutput }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createOscillatorNode(audioContext));
+    const modulatorGain = useRef(createGainNode(audioContext));
     const [min, setMin] = useState(20);
     const [max, setMax] = useState(20001);
     const [mid, setMid] = useState(440);
@@ -15,7 +21,6 @@ function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
         const oscNode = audio.current;
         const modGainNode = modulatorGain.current;
         createAudio(oscNode);
-        oscNode.frequency.setValueAtTime(440, audioContext.currentTime);
         modGainNode.connect(oscNode.frequency);
         oscNode.start();
 
@@ -35,7 +40,7 @@ function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
     };
 
     const handleWaveChange = (w) => {
-        audio.current.type = w;
+        setNodeType(audio.current, w);
     };
 
     const handleLFOClick = () => {
@@ -55,18 +60,10 @@ function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
     };
 
     const onOutput = (event) => {
-        const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
-        const el = event.target.getBoundingClientRect();
-        const x = el.x;
-        const y = el.y;
-        const bottom = el.bottom;
-        const right = el.right;
-        const xCenter = (right - x) / 2 + x - largerDim * 0.04;
-        const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
-
+        const center = getCenterPointFromEvent(event);
         handleOutput({
-            tomyKey: parent + ' param',
-            toLocation: { x: xCenter, y: yCenter },
+            tomyKey: makeParamKey(parent),
+            toLocation: center,
             audio: modulatorGain.current,
         });
     };
@@ -80,7 +77,7 @@ function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
             <div id="oscBoxOne">
                 <Selector id="waveSelector" values={['sine', 'sawtooth', 'triangle']} handleClick={handleWaveChange} />
                 <label id="oscSlider" className="switch tooltip">
-                    <input type="checkbox" onClick={handleLFOClick}></input>
+                    <input type="checkbox" onClick={handleLFOClick} aria-label="LFO Mode"></input>
                     <span className="slider round"></span>
                     <span id="oscLFOTip" className="tooltiptext">
                         LFO Mode
@@ -95,8 +92,8 @@ function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
                 mid={mid}
                 onChange={setFreq}
             />
-            <div className="cordOuter tooltip" id="firstParam" onClick={onOutput}>
-                <div className="cordInner" id={parent + ' param' + ' inputInner'}>
+            <div className="cordOuter tooltip" id="firstParam" role="button" aria-label="Connect to frequency param" tabIndex={0} onClick={onOutput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}>
+                <div className="cordInner" id={makeParamKey(parent) + ' inputInner'}>
                     <div id="ttWrapper">
                         <span id="oscDetuneParamTip" className="tooltiptext">
                             <span className="paramSpan">param: </span>frequency

@@ -47,6 +47,7 @@ function LogSlider({ labelName, tooltipText, min, max, mid, onChange }) {
                 max={1}
                 step="any"
                 onChange={handleChange}
+                aria-label={tooltipText}
             ></input>
             <input
                 id={labelName + 'freqNumInput'}
@@ -58,6 +59,7 @@ function LogSlider({ labelName, tooltipText, min, max, mid, onChange }) {
                         handleNumFreqChange();
                     }
                 }}
+                aria-label={tooltipText + ' value'}
             ></input>
             <span id={labelName + 'logSliderFreqTip'} className="tooltiptext">
                 {tooltipText}

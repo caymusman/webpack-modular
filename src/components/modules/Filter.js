@@ -3,27 +3,31 @@ import Selector from '../ui/Selector';
 import Dial from '../ui/Dial';
 import Slider from '../ui/Slider';
 import LogSlider from '../ui/LogSlider';
+import { setNodeType, setParamValue } from '../../audio/nodeHelpers';
+import { createFilterNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Filter({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createBiquadFilter());
+function Filter({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createFilterNode(audioContext));
     useEffect(() => {
         createAudio(audio.current);
     }, [createAudio]);
 
     const handleFilterType = (val) => {
-        audio.current.type = val;
+        setNodeType(audio.current, val);
     };
 
     const setGain = (val) => {
-        audio.current.gain.setValueAtTime(val, audioContext.currentTime);
+        setParamValue(audio.current.gain, val, audioContext.currentTime);
     };
 
     const setFreq = (val) => {
-        audio.current.frequency.value = val;
+        setParamValue(audio.current.frequency, Number(val), audioContext.currentTime);
     };
 
     const handleDialChange = (val) => {
-        audio.current.Q.value = val;
+        setParamValue(audio.current.Q, Number(val), audioContext.currentTime);
     };
 
     const filterTypes = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass'];

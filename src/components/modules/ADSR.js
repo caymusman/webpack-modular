@@ -1,9 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import LogSlider from '../ui/LogSlider';
 import TextInput from '../ui/TextInput';
+import { createGainNode } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function ADSR({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createGain());
+function ADSR({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createGainNode(audioContext, 0));
     const intervalRef = useRef(null);
     const [running, setRunning] = useState(false);
     const [rate, setRate] = useState(3000);
@@ -15,7 +18,6 @@ function ADSR({ audioContext, createAudio }) {
     useEffect(() => {
         const audioNode = audio.current;
         createAudio(audioNode);
-        audioNode.gain.setValueAtTime(0, audioContext.currentTime);
 
         return () => {
             if (intervalRef.current) {
@@ -86,7 +88,7 @@ function ADSR({ audioContext, createAudio }) {
             ></LogSlider>
             <div id="ADSRBox">
                 <label id="ADSRCheck" className="switch tooltip">
-                    <input type="checkbox" onClick={handleToggle}></input>
+                    <input type="checkbox" onClick={handleToggle} aria-label="LFO Mode"></input>
                     <span className="slider round"></span>
                     <span id="ADSRCheckTip" className="tooltiptext">
                         LFO Mode

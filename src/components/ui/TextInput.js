@@ -33,6 +33,7 @@ function TextInput({ defaultVal, max, min, onSubmit, tooltipText, labelName }) {
                         handleNumSubmit();
                     }
                 }}
+                aria-label={tooltipText}
             ></input>
             <span id={labelName + 'Tip'} className="tooltiptext">
                 {tooltipText}

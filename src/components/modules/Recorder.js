@@ -1,8 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
+import { createGainNode, createMediaStreamDestination } from '../../audio/nodeFactories';
+import { useAudioContext } from '../../audio/AudioContextProvider';
 
-function Recorder({ audioContext, createAudio }) {
-    const audio = useRef(audioContext.createGain());
-    const destination = useRef(audioContext.createMediaStreamDestination());
+function Recorder({ createAudio }) {
+    const audioContext = useAudioContext();
+    const audio = useRef(createGainNode(audioContext, 0));
+    const destination = useRef(createMediaStreamDestination(audioContext));
     const mediaRecorder = useRef(null);
     const chunks = useRef([]);
     const [playing, setPlaying] = useState(false);
@@ -11,7 +14,6 @@ function Recorder({ audioContext, createAudio }) {
 
     useEffect(() => {
         audio.current.connect(destination.current);
-        audio.current.gain.setValueAtTime(0, audioContext.currentTime);
         const mr = new MediaRecorder(destination.current.stream, { mimeType: 'audio/ogg' });
         mr.audioChannels = 2;
         chunks.current = [];
