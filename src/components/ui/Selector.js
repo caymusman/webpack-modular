@@ -1,39 +1,27 @@
-import React from 'react';
+import { useState } from 'react';
 
-class Selector extends React.Component {
-    constructor(props) {
-        super(props);
+function Selector({ id, values, handleClick }) {
+    const [val, setVal] = useState(values[0]);
 
-        this.state = {
-            val: this.props.values[0],
-        };
+    const onClick = (event) => {
+        setVal(event.target.innerHTML);
+        handleClick(event.target.innerHTML);
+    };
 
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    handleClick(event) {
-        this.setState({
-            val: event.target.innerHTML,
-        });
-        this.props.handleClick(event.target.innerHTML);
-    }
-
-    render() {
-        return (
-            <div id={this.props.id} className="selectorDiv">
-                <span>{this.state.val}</span>
-                <div id="selectorContent">
-                    {this.props.values.map((el) => {
-                        return (
-                            <div key={el} className="selectorVal" onClick={this.handleClick}>
-                                {el}
-                            </div>
-                        );
-                    })}
-                </div>
+    return (
+        <div id={id} className="selectorDiv">
+            <span>{val}</span>
+            <div id="selectorContent">
+                {values.map((el) => {
+                    return (
+                        <div key={el} className="selectorVal" onClick={onClick}>
+                            {el}
+                        </div>
+                    );
+                })}
             </div>
-        );
-    }
+        </div>
+    );
 }
 
 export default Selector;

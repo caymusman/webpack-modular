@@ -1,74 +1,56 @@
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import Selector from '../ui/Selector';
 import Dial from '../ui/Dial';
 import Slider from '../ui/Slider';
 import LogSlider from '../ui/LogSlider';
 
-class Filter extends React.Component {
-    constructor(props) {
-        super(props);
+function Filter({ audioContext, createAudio }) {
+    const audio = useRef(audioContext.createBiquadFilter());
+    useEffect(() => {
+        createAudio(audio.current);
+    }, [createAudio]);
 
-        this.state = {
-            audio: this.props.audioContext.createBiquadFilter(),
-            type: 'lowpass',
-        };
+    const handleFilterType = (val) => {
+        audio.current.type = val;
+    };
 
-        this.handleFilterType = this.handleFilterType.bind(this);
-        this.setGain = this.setGain.bind(this);
-        this.setFreq = this.setFreq.bind(this);
-        this.handleDialChange = this.handleDialChange.bind(this);
-    }
+    const setGain = (val) => {
+        audio.current.gain.setValueAtTime(val, audioContext.currentTime);
+    };
 
-    handleFilterType(val) {
-        this.state.audio.type = val;
-        this.setState({
-            type: val,
-        });
-    }
+    const setFreq = (val) => {
+        audio.current.frequency.value = val;
+    };
 
-    setGain(val) {
-        this.state.audio.gain.setValueAtTime(val, this.props.audioContext.currentTime);
-    }
+    const handleDialChange = (val) => {
+        audio.current.Q.value = val;
+    };
 
-    setFreq(val) {
-        this.state.audio.frequency.value = val;
-    }
-
-    handleDialChange(val) {
-        this.state.audio.Q.value = val;
-    }
-
-    componentDidMount() {
-        this.props.createAudio(this.state.audio);
-    }
-
-    render() {
-        const filterTypes = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass'];
-        return (
-            <div className="filterDiv">
-                <div id="filterBoxOne">
-                    <Selector id="filterSelector" values={filterTypes} handleClick={this.handleFilterType} />
-                    <Dial min={0} max={1001} name="Q" onChange={this.handleDialChange} />
-                </div>
-                <Slider
-                    labelName="filterGain"
-                    tooltipText="Filter Gain"
-                    min={-40}
-                    max={40}
-                    step={0.01}
-                    setAudio={this.setGain}
-                />
-                <LogSlider
-                    labelName="filterFreq"
-                    tooltipText="Filter Frequency"
-                    min={0}
-                    max={20001}
-                    mid={440}
-                    onChange={this.setFreq}
-                />
+    const filterTypes = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass'];
+    return (
+        <div className="filterDiv">
+            <div id="filterBoxOne">
+                <Selector id="filterSelector" values={filterTypes} handleClick={handleFilterType} />
+                <Dial min={0} max={1001} name="Q" onChange={handleDialChange} />
             </div>
-        );
-    }
+            <Slider
+                labelName="filterGain"
+                tooltipText="Filter Gain"
+                min={-40}
+                max={40}
+                step={0.01}
+                setAudio={setGain}
+            />
+            <LogSlider
+                labelName="filterFreq"
+                tooltipText="Filter Frequency"
+                min={0}
+                max={20001}
+                mid={440}
+                onChange={setFreq}
+            />
+        </div>
+    );
 }
 
 export default Filter;

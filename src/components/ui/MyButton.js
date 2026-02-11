@@ -1,33 +1,21 @@
-import React from 'react';
+import { useState } from 'react';
 
-class MyButton extends React.Component {
-    constructor(props) {
-        super(props);
+function MyButton({ name, handleClick, inputOnly, audioIn }) {
+    const [count, setCount] = useState(0);
 
-        this.state = {
-            count: 0,
-        };
-
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    handleClick() {
-        if (this.props.audioIn) {
+    const onClick = () => {
+        if (audioIn) {
             return;
         }
-        this.props.handleClick(this.props.name + ' ' + this.state.count, this.props.name, this.props.inputOnly);
-        this.setState((state) => ({
-            count: state.count + 1,
-        }));
-    }
+        handleClick(name + ' ' + count, name, inputOnly);
+        setCount((c) => c + 1);
+    };
 
-    render() {
-        return (
-            <button className="addBtn" onClick={this.handleClick}>
-                {this.props.name}
-            </button>
-        );
-    }
+    return (
+        <button className="addBtn" onClick={onClick}>
+            {name}
+        </button>
+    );
 }
 
 export default MyButton;

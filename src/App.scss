@@ -4,16 +4,16 @@ $cancelRed: darken(red, 30%);
 $darkGreen: lighten(#013220, 5%);
 $mainPurple: #b6a8b5;
 
-html,body
-{
+html,
+body {
     width: 100%;
     height: 100%;
     margin: 0px;
     padding: 0px;
-    overflow-x: hidden; 
+    overflow-x: hidden;
 }
 
-#notAvailable{
+#notAvailable {
     visibility: 0;
     opacity: 0;
     position: absolute;
@@ -23,11 +23,11 @@ html,body
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    background-color:$mainPurple;
+    background-color: $mainPurple;
     color: $dark;
-    text-align: center; 
+    text-align: center;
 
-    p{
+    p {
         width: 80%;
         border-radius: 5%;
         padding: 10px;
@@ -36,12 +36,11 @@ html,body
     }
 }
 
-.interactive{
-    cursor:pointer;
+.interactive {
+    cursor: pointer;
 }
 
-
-#mainDiv{
+#mainDiv {
     position: absolute;
     height: 100vh;
     width: 100vw;
@@ -53,17 +52,16 @@ html,body
     margin: 0;
 }
 
-#logo{
+#logo {
     height: 100%;
     width: 100%;
     padding: 0px;
     margin: 0px;
     background: #999;
     z-index: 3;
-    
 }
 
-#header{
+#header {
     height: 100%;
     width: 100%;
     padding: 0px;
@@ -73,7 +71,7 @@ html,body
     z-index: 2;
 }
 
-#sidebar{
+#sidebar {
     position: relative;
     height: 100%;
     width: 100%;
@@ -82,16 +80,16 @@ html,body
     display: flex;
     flex-direction: column;
     z-index: 2;
-    filter:drop-shadow(0 0 10px $dark);
+    filter: drop-shadow(0 0 10px $dark);
 
-    #sideButtons{
+    #sideButtons {
         height: 100%;
         width: 100%;
     }
 
-    .addBtn{
-        font-size: .6vmax;
-        text-shadow: .1vmax .1vmax .05vmax $mainPurple;
+    .addBtn {
+        font-size: 0.6vmax;
+        text-shadow: 0.1vmax 0.1vmax 0.05vmax $mainPurple;
         width: 100%;
         height: 10%;
         background-color: $light;
@@ -102,33 +100,33 @@ html,body
         border: none;
         border-radius: 0px;
 
-        &:hover{
+        &:hover {
             background-color: $dark;
             color: #ddd;
         }
     }
 }
 
-#playSpace{ 
+#playSpace {
     z-index: 1;
     position: relative;
     background-color: $mainPurple;
     background-image: url('/media/bedge-grunge.png');
     width: 100%;
 
-    #patchExit{
+    #patchExit {
         position: absolute;
         right: 3%;
         top: 3%;
         font-size: 6vh;
         color: $light;
-    
-        &:hover{
+
+        &:hover {
             color: $cancelRed;
         }
     }
 
-    .pingBox{
+    .pingBox {
         width: 30vmax;
         height: 15vmax;
         position: absolute;
@@ -140,22 +138,20 @@ html,body
         display: flex;
         flex-direction: column;
         filter: drop-shadow(0 0 10px $dark);
-        
 
-        #pingTextDiv{
+        #pingTextDiv {
             width: 100%;
             height: 25%;
             margin-top: 0px;
             background: rgb(150, 91, 91);
             text-align: center;
             text-decoration-color: $cancelRed;
-            
 
-            .error{
+            .error {
                 color: $light;
             }
         }
-        #pingText{
+        #pingText {
             margin: auto;
             color: $light;
             font-size: 120%;
@@ -164,15 +160,18 @@ html,body
             text-align: center;
         }
 
-        .fa-times-circle{
+        .fa-times-circle {
             position: absolute;
             right: -1vmax;
             top: -1.2vmax;
             font-size: 2vmax;
             color: $light;
-            transition: transform .6s, filter .6s, color .6s;
+            transition:
+                transform 0.6s,
+                filter 0.6s,
+                color 0.6s;
             cursor: pointer;
-            &:hover{
+            &:hover {
                 color: $cancelRed;
                 transform: rotate(180deg);
                 filter: drop-shadow(0 0 2px $dark);
@@ -180,57 +179,58 @@ html,body
         }
     }
 
-    .dragDiv{
+    .dragDiv {
         position: absolute;
         width: 12.5vw;
         height: 10.5vh;
-        
     }
 
-    .moduleDiv{
+    .moduleDiv {
         position: absolute;
         top: 2vh;
         left: 2vh;
-        background-color:$light;
+        background-color: $light;
         filter: drop-shadow(0 0 10px $dark);
         text-align: center;
         min-width: 150px;
         border-radius: 2px;
         padding-bottom: 5%;
-        
-    
-        &:hover{
-            .cordOuter.show{
+
+        &:hover {
+            .cordOuter.show {
                 visibility: visible;
                 opacity: 1;
             }
-            .cordOuter.hide{
+            .cordOuter.hide {
                 visibility: none;
                 opacity: 0;
             }
-            #firstParam{
+            #firstParam {
                 opacity: 1;
             }
-
         }
-        
-        .fa-times{
+
+        .fa-times {
             color: $light;
-            visibility:hidden;
+            visibility: hidden;
             opacity: 0;
             position: absolute;
             width: 12px;
             height: 12px;
             top: -8px;
             left: -4px;
-            transition: filter .6s, visibility .45s, opacity .45s, color .6s;
+            transition:
+                filter 0.6s,
+                visibility 0.45s,
+                opacity 0.45s,
+                color 0.6s;
             cursor: pointer;
-            &:hover{
+            &:hover {
                 filter: drop-shadow(0 0 2px $dark);
                 color: $cancelRed;
             }
         }
-        p{
+        p {
             border-radius: 2px 2px 0px 0px;
             width: 100%;
             height: 30%;
@@ -241,382 +241,373 @@ html,body
             padding-top: 4%;
             padding-bottom: 4%;
             cursor: move;
-            transition: background-color .3s, color .3s;
-            &:hover{
+            transition:
+                background-color 0.3s,
+                color 0.3s;
+            &:hover {
                 background-color: lighten($dark, 10%);
                 color: lighten($light, 10%);
             }
-            &:hover{
-                .fa-times{
+            &:hover {
+                .fa-times {
                     visibility: visible;
                     opacity: 1;
                 }
             }
         }
 
-        #fillingDiv{
+        #fillingDiv {
             height: 100%;
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
 
-            input{
+            input {
                 width: 60%;
             }
 
-            button{
+            button {
                 width: 20%;
                 height: 20%;
             }
         }
-        }
-
-        #firstParam{
-            position: absolute;
-            top: -1vh;
-            right: 25%;
-            background-color: $darkGreen;
-
-            .cordInner{
-                background-color: $dark;
-            }
-        }
-
-        #inputOuter{
-            top: -1vh;
-            right: 75%;
-        }
-
-        #outputOuter{
-            bottom: -1vh;
-            right: 50%;
-
-            .cordInner{
-                background-color: $light;
-            }
-        }
-
     }
 
-    //------------------------------SELECTOR DIV---------------------------------
+    #firstParam {
+        position: absolute;
+        top: -1vh;
+        right: 25%;
+        background-color: $darkGreen;
 
-    .selectorDiv{
-        width: 40%;
-        color: $light;
+        .cordInner {
+            background-color: $dark;
+        }
+    }
+
+    #inputOuter {
+        top: -1vh;
+        right: 75%;
+    }
+
+    #outputOuter {
+        bottom: -1vh;
+        right: 50%;
+
+        .cordInner {
+            background-color: $light;
+        }
+    }
+}
+
+//------------------------------SELECTOR DIV---------------------------------
+
+.selectorDiv {
+    width: 40%;
+    color: $light;
+    background: $dark;
+    text-transform: capitalize;
+    position: relative;
+    display: inline-block;
+    border-radius: 3px;
+    font-size: 12px;
+
+    span {
+        display: block;
+        padding: 3px;
+    }
+
+    #selectorContent {
+        width: 100%;
+        display: none;
+        position: absolute;
+    }
+
+    .selectorVal {
+        display: block;
         background: $dark;
-        text-transform: capitalize;
-        position: relative;
-        display: inline-block;
-        border-radius: 3px;
-        font-size: 12px;
-    
-        span{
-            display: block;
-            padding: 3px;
-        }
+        padding: 3px;
 
-        #selectorContent{
-            width: 100%;
-            display:none;
-            position: absolute;
-        }
-    
-        .selectorVal{
-            display: block;
-            background: $dark;
-            padding: 3px;
-    
-            &:hover{
-                background: lighten($dark, 10%);
-                cursor: pointer;
-            }
-        }
-    
-        &:hover{
-            border-radius: 3px 3px 0px 0px;
-            span{
-                color: $mainPurple;
-            }
-            #selectorContent{
-                display: block;
-            }
-        }
-    }
-    
- // ------------------------------------- OSCILLATOR DIV --------------------------------
-    .oscDiv{
-
-        #oscBoxOne{
-            display: flex;
-            align-items: center;
-            justify-content: space-evenly;
-            margin-bottom: 10px;
-        }
-
-        #waveSelector{
-            z-index: 100;
-        }
-
-        #rangeNum{
+        &:hover {
             background: lighten($dark, 10%);
-            color: $light;
-            width: 29%;
-            position: relative;
-            left: 35%;
-            border-radius: 3px;
-            margin-bottom: 5%;
-        }
-
-        #freqNumInput{
-            width: 29%;
-            position: relative;
-            border-radius: 3px;
-        }
-
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-        }
-        
-        input:checked + .slider {
-            background-color:$dark;
-        }
-        
-        input:focus + .slider {
-            box-shadow: 0 0 1px $dark;
-        }
-        
-        input:checked + .slider:before {
-            -webkit-transform: translateX(34px);
-            -ms-transform: translateX(34px);
-            transform: translateX(34px);
-        }
-        
-        .slider.round {
-            border-radius: 34px;
-            z-index: 100;
-        
-            &:before{
-                border-radius: 50%;
-            }
         }
     }
-        
-        
 
-    //---------------------------------------- GAIN MOD --------------------------------------------
-
-    #gainRangeInput{
-        margin-top: 3.5%;
+    &:hover {
+        border-radius: 3px 3px 0px 0px;
+        span {
+            color: $mainPurple;
+        }
+        #selectorContent {
+            display: block;
+        }
     }
+}
 
-    #gainNumInput{
-        width: 33%;
-    }
-
-
-    //---------------------------------------- FILTER MOD -------------------------------------------
-
-    #filterBoxOne{
+// ------------------------------------- OSCILLATOR DIV --------------------------------
+.oscDiv {
+    #oscBoxOne {
         display: flex;
         align-items: center;
         justify-content: space-evenly;
-    }
-    #filterSelector{
-        z-index: 1000;
-    }
-
-    //---------------------------------------- ADSR MOD -------------------------------------------
-
-    #ADSRDiv{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    #ADSRSliderlogSliderWhole{
-        margin-top: 13px;
-    }
-
-    #ADSRBox{
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-        margin: 5px 0px;
-    }
-
-    #ADSRControls{
-        width: 75%;
-        height: 30%;
-        display: grid;
-        grid: 50% 50% / 50% 50%;
-
-        label{
-            input{
-                width: 75%;
-            }
-        }
-
-    }
-
-    //---------------------------------------- DELAY MOD -------------------------------------------
-
-    #delayDiv{
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
-    //---------------------------------------- DISTORTION MOD -------------------------------------------
-
-    #distortionCurveDiv{
-        margin-bottom: 5px;
-        margin-top: 15px;
-    }
-
-    #distortionSelector{
-        z-index: 6;
         margin-bottom: 10px;
     }
 
-
-    //---------------------------------------- REVERB MOD -------------------------------------------
-
-    #reverbSelector{
-        z-index: 6;
-        margin: 5px 0px;
+    #waveSelector {
+        z-index: 100;
     }
 
-
-    //---------------------------------------- RECORD MOD -------------------------------------------
-
-    #RecorderDiv{
-
-        #recorderButtons{
-            display: flex;
-            align-items: center;
-            justify-content: space-evenly;
-            margin-bottom: 5px;
-        }
-    
-        a{
-            color: $light;
-            &:link{
-                color: $dark;
-            }
-            margin-bottom: 3px;
-        }
-    }
-
-    //---------------------------------------- OUTPUT MODULE ----------------------------------------
-
-    #outputDiv{
-        position: absolute;
-        right: 0%;
-        bottom: 0%;
-        width: 86.4px;
-        height: 172.8px;
-        background-color:$light;
-        filter: drop-shadow(0 0 10px $dark);
-        text-align: center;
+    #rangeNum {
+        background: lighten($dark, 10%);
+        color: $light;
+        width: 29%;
+        position: relative;
+        left: 35%;
         border-radius: 3px;
+        margin-bottom: 5%;
+    }
 
-        p{
-            border-radius: 2px 2px 0px 0px;
-            width: 100%;
-            height: 20%;
-            line-height: 180%;
-            background-color: $dark;
-            color: $light;
-            margin: 0px;
-            padding-top: 4%;
-            padding-bottom: 4%;
+    #freqNumInput {
+        width: 29%;
+        position: relative;
+        border-radius: 3px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: '';
+        height: 14px;
+        width: 14px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+    }
+
+    input:checked + .slider {
+        background-color: $dark;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px $dark;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(34px);
+        -ms-transform: translateX(34px);
+        transform: translateX(34px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+        z-index: 100;
+
+        &:before {
+            border-radius: 50%;
         }
+    }
+}
 
-        .cordOuter{
-            position: absolute;
-            left: 50%;
-            top: 90%;
-            transform: translate(-50%, -50%);
-            visibility: 1;
-            opacity: 1;
-            background-color: lighten($dark, 20%);
-            width: 14px;
-            height: 14px;
+//---------------------------------------- GAIN MOD --------------------------------------------
 
+#gainRangeInput {
+    margin-top: 3.5%;
+}
+
+#gainNumInput {
+    width: 33%;
+}
+
+//---------------------------------------- FILTER MOD -------------------------------------------
+
+#filterBoxOne {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+#filterSelector {
+    z-index: 1000;
+}
+
+//---------------------------------------- ADSR MOD -------------------------------------------
+
+#ADSRDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#ADSRSliderlogSliderWhole {
+    margin-top: 13px;
+}
+
+#ADSRBox {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    margin: 5px 0px;
+}
+
+#ADSRControls {
+    width: 75%;
+    height: 30%;
+    display: grid;
+    grid: 50% 50% / 50% 50%;
+
+    label {
+        input {
+            width: 75%;
         }
+    }
+}
 
-        .cordInner{
-            background-color: $light;
+//---------------------------------------- DELAY MOD -------------------------------------------
+
+#delayDiv {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+//---------------------------------------- DISTORTION MOD -------------------------------------------
+
+#distortionCurveDiv {
+    margin-bottom: 5px;
+    margin-top: 15px;
+}
+
+#distortionSelector {
+    z-index: 6;
+    margin-bottom: 10px;
+}
+
+//---------------------------------------- REVERB MOD -------------------------------------------
+
+#reverbSelector {
+    z-index: 6;
+    margin: 5px 0px;
+}
+
+//---------------------------------------- RECORD MOD -------------------------------------------
+
+#RecorderDiv {
+    #recorderButtons {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        margin-bottom: 5px;
+    }
+
+    a {
+        color: $light;
+        &:link {
+            color: $dark;
         }
+        margin-bottom: 3px;
+    }
+}
 
-        #outputCenter{
-            height: 80%;
-            width: 100%;
+//---------------------------------------- OUTPUT MODULE ----------------------------------------
+
+#outputDiv {
+    position: absolute;
+    right: 0%;
+    bottom: 0%;
+    width: 86.4px;
+    height: 172.8px;
+    background-color: $light;
+    filter: drop-shadow(0 0 10px $dark);
+    text-align: center;
+    border-radius: 3px;
+
+    p {
+        border-radius: 2px 2px 0px 0px;
+        width: 100%;
+        height: 20%;
+        line-height: 180%;
+        background-color: $dark;
+        color: $light;
+        margin: 0px;
+        padding-top: 4%;
+        padding-bottom: 4%;
+    }
+
+    .cordOuter {
+        position: absolute;
+        left: 50%;
+        top: 90%;
+        transform: translate(-50%, -50%);
+        visibility: 1;
+        opacity: 1;
+        background-color: lighten($dark, 20%);
+        width: 14px;
+        height: 14px;
+    }
+
+    .cordInner {
+        background-color: $light;
+    }
+
+    #outputCenter {
+        height: 80%;
+        width: 100%;
+        position: relative;
+
+        input[type='range'] {
             position: relative;
-
-            input[type=range] {
-                position: relative;
-                transform: rotate(270deg);
-                top: 30%;
-                right: 2.5%;
-                width: 100%;
-                height: 5%;
-              }
-              input[type=range]::-webkit-slider-runnable-track {
-                width: 100%;
-                height: 100%;
-              }
-              input[type=range]::-webkit-slider-thumb {
-                border: 2px solid lighten($dark, 10%);
-                border-radius: 50%;
-                margin-top: -4.5%;
-                height: 12px;
-                width: 12px;
-              }
-              input[type=range]::-moz-range-track {
-                width: 100%;
-                height: 100%;
-              }
-              input[type=range]::-moz-range-thumb {
-                margin-top: -6%;
-                height: 10px;
-                width: 10px;
-              }
+            transform: rotate(270deg);
+            top: 30%;
+            right: 2.5%;
+            width: 100%;
+            height: 5%;
         }
+        input[type='range']::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 100%;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            border: 2px solid lighten($dark, 10%);
+            border-radius: 50%;
+            margin-top: -4.5%;
+            height: 12px;
+            width: 12px;
+        }
+        input[type='range']::-moz-range-track {
+            width: 100%;
+            height: 100%;
+        }
+        input[type='range']::-moz-range-thumb {
+            margin-top: -6%;
+            height: 10px;
+            width: 10px;
+        }
+    }
 }
 
 //---------------------------------------- CORD DOCKS ----------------------------------------
 
-.cordOuter{
+.cordOuter {
     visibility: 0;
     opacity: 0;
     position: absolute;
@@ -624,18 +615,22 @@ html,body
     height: 15px;
     background-color: lighten($dark, 20%);
     border-radius: 50%;
-    transition: transform .6s, filter .3s, visibility .3s, opacity .3s;
+    transition:
+        transform 0.6s,
+        filter 0.3s,
+        visibility 0.3s,
+        opacity 0.3s;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0px;
     transform: translate(50%);
 
-    &:hover{
-        filter:drop-shadow(0 0 5px $dark);
+    &:hover {
+        filter: drop-shadow(0 0 5px $dark);
     }
 
-    .cordInner{
+    .cordInner {
         width: 65%;
         height: 65%;
         border-radius: 50%;
@@ -645,80 +640,78 @@ html,body
     }
 }
 
-#returnSpace{
+#returnSpace {
     height: 100%;
     width: 100%;
 }
 
 //---------------------------------------- SVG ----------------------------------------
 
-svg{
+svg {
     position: absolute;
     width: 100%;
     height: 100%;
     pointer-events: none;
     stroke-linecap: round;
 
-    line{
+    line {
         position: absolute;
         stroke: $dark;
         stroke-width: 3;
         pointer-events: all;
 
-        &:hover{
+        &:hover {
             stroke: $cancelRed;
         }
     }
 }
 
-.show{
+.show {
     visibility: visible;
 }
 
-.hide{
+.hide {
     visibility: hidden;
-
 }
 
-.raise{
-    filter:drop-shadow(0 0 5px $light);
+.raise {
+    filter: drop-shadow(0 0 5px $light);
 }
-
 
 //----------------------------------------NUMBER INPUT----------------------------------------
 
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-  text-align: center;
+    -webkit-appearance: none;
+    margin: 0;
+    text-align: center;
 }
 
 /* Firefox */
-input[type=text] {
-  -moz-appearance: textfield;
-  text-align: center;
-  background: $light;
-  color: $dark;
-  width: 29%;
-  border-radius: 3px;
+input[type='text'] {
+    -moz-appearance: textfield;
+    text-align: center;
+    background: $light;
+    color: $dark;
+    width: 29%;
+    border-radius: 3px;
 }
- 
-input, input:focus{
+
+input,
+input:focus {
     border: 0;
     outline: none;
 }
 
-input:focus{
+input:focus {
     background: $dark;
     color: $light;
 }
 
-
 //------------------------------------------------TOOLTIP----------------------------------------
 
-#ttWrapper{
+#ttWrapper {
     width: 0;
     height: 0;
     position: relative;
@@ -726,112 +719,109 @@ input:focus{
 .tooltiptext {
     visibility: hidden;
     width: 60px;
-    font-size: 12px;;
+    font-size: 12px;
     background-color: lighten($dark, 10%);
     color: $light;
     text-align: center;
     border-radius: 6px;
     padding: 5px;
-    display:block;
+    display: block;
     z-index: 100;
-  
+
     /* Position the tooltip */
     position: absolute;
     bottom: 125%;
     z-index: 1;
 
-    .paramSpan{
+    .paramSpan {
         color: white;
         text-decoration: underline;
     }
-  } 
-  //osc
-    #oscFreqTip{
-        transform: translate(55px, -80px);
-    }
+}
+//osc
+#oscFreqTip {
+    transform: translate(55px, -80px);
+}
 
-    #oscModGainSpan{
-        transform: translate(50px, 5px);
-    }
+#oscModGainSpan {
+    transform: translate(50px, 5px);
+}
 
-    #oscFreqlogSliderFreqTip{
-        left: 47px;
-        transform: translateY(5px);
-    }
+#oscFreqlogSliderFreqTip {
+    left: 47px;
+    transform: translateY(5px);
+}
 
-    #oscDetuneParamTip{
-        transform: translate(-29px, -10px);
-    }
+#oscDetuneParamTip {
+    transform: translate(-29px, -10px);
+}
 
-    //gain
+//gain
 
-    #gainGainParamTip{
-        transform: translate(-30px, -3px);
-    }
+#gainGainParamTip {
+    transform: translate(-30px, -3px);
+}
 
-    //filter
+//filter
 
-    #Qdialtip{
-        transform: translate(-11px, -3px);
-    }
+#Qdialtip {
+    transform: translate(-11px, -3px);
+}
 
-    #filterGainSpan{
-        transform: translate(51px, 5px);
-    }
+#filterGainSpan {
+    transform: translate(51px, 5px);
+}
 
-    #filterFreqlogSliderFreqTip{
-        transform: translate(51px, 5px);
-    }
+#filterFreqlogSliderFreqTip {
+    transform: translate(51px, 5px);
+}
 
-    //pan
+//pan
 
-    #panPanSpan{
-        transform: translate(51px, 5px);
-    }
+#panPanSpan {
+    transform: translate(51px, 5px);
+}
 
-    //ADSR
+//ADSR
 
-    #ADSRSliderlogSliderFreqTip{
-        transform: translate(55px, 5px);
-    }
+#ADSRSliderlogSliderFreqTip {
+    transform: translate(55px, 5px);
+}
 
-    #ADSRCheckTip{
-        transform: translate(-4px, -3px);
-    }
+#ADSRCheckTip {
+    transform: translate(-4px, -3px);
+}
 
-    //Delay
+//Delay
 
-    #delayDelayTimeSpan{
-        transform: translate(51px, 5px);
-    }
+#delayDelayTimeSpan {
+    transform: translate(51px, 5px);
+}
 
-    //Distortion
-    #distortionCurveSpan{
-        transform: translate(51px, 5px);
-    }
+//Distortion
+#distortionCurveSpan {
+    transform: translate(51px, 5px);
+}
 
-    //AudioInput
+//AudioInput
 
-    #audioInGainSpan{
-        transform: translate(50px, 5px);
-    }
+#audioInGainSpan {
+    transform: translate(50px, 5px);
+}
 
-.tooltip{
+.tooltip {
     position: relative;
-    &:hover{
+    &:hover {
         .tooltiptext {
             display: block;
             z-index: 2000;
             visibility: visible;
-          }
+        }
     }
 }
 
-
-    
-
 .tooltiptext::after {
-    content: " ";
+    content: ' ';
     position: absolute;
     top: 100%; /* At the bottom of the tooltip */
     left: 50%;
@@ -839,61 +829,57 @@ input:focus{
     border-width: 5px;
     border-style: solid;
     border-color: lighten($dark, 10%) transparent transparent transparent;
-  }
+}
 
-
-
-
-  // ---------------------------------RANGE INPUTS ------------------------------
-  input[type=range] {
+// ---------------------------------RANGE INPUTS ------------------------------
+input[type='range'] {
     -webkit-appearance: none;
     position: relative;
     border-radius: 6.5px;
     width: 80%;
-  }
-  input[type=range]:focus {
+}
+input[type='range']:focus {
     outline: none;
     border-radius: 10px;
-  }
-  input[type=range]::-webkit-slider-runnable-track {
-      -webkit-appearance: none;
+}
+input[type='range']::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
     cursor: pointer;
     background: $dark;
     border-radius: 3px;
     border: 0.2px solid lighten($dark, 10%);
-  }
-  input[type=range]::-webkit-slider-thumb {
+}
+input[type='range']::-webkit-slider-thumb {
     border: 2px solid lighten($dark, 10%);
     border-radius: 50%;
     background: $light;
     cursor: pointer;
     -webkit-appearance: none;
     height: 12px;
-            width: 12px;
-  }
-  input[type=range]:focus::-webkit-slider-runnable-track {
+    width: 12px;
+}
+input[type='range']:focus::-webkit-slider-runnable-track {
     background: $dark;
     border-radius: 3px;
-  }
-  input[type=range]::-moz-range-track {
+}
+input[type='range']::-moz-range-track {
     cursor: pointer;
     background: $dark;
     height: 100%;
     border-radius: 3px;
     border: 0.2px solid lighten($dark, 10%);
-  }
-  input[type=range]::-moz-range-thumb {
+}
+input[type='range']::-moz-range-thumb {
     border: 2px solid lighten($dark, 10%);
     border-radius: 50%;
     background: $light;
     cursor: pointer;
     margin-top: -6%;
-  }
+}
 
+//------------------------------------------ CHECKBOX SLIDER --------------------------------------
 
-  //------------------------------------------ CHECKBOX SLIDER -------------------------------------- 
-
-  .switch {
+.switch {
     position: relative;
     display: inline-block;
     width: 60px;
@@ -914,24 +900,24 @@ input:focus{
     right: 0;
     bottom: 0;
     background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
 }
 
 .slider:before {
     position: absolute;
-    content: "";
+    content: '';
     height: 14px;
     width: 14px;
     left: 4px;
     bottom: 4px;
     background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
 }
 
 input:checked + .slider {
-    background-color:$dark;
+    background-color: $dark;
 }
 
 input:focus + .slider {
@@ -948,41 +934,38 @@ input:checked + .slider:before {
     border-radius: 34px;
     z-index: 100;
 
-    &:before{
+    &:before {
         border-radius: 50%;
     }
 }
 
-
-  
-//------------------------------------------ DIAL -------------------------------------- 
-.dialWhole{ 
+//------------------------------------------ DIAL --------------------------------------
+.dialWhole {
     height: 60px;
     width: 33%;
     display: flex;
     justify-content: center;
     flex-direction: column;
 
-    input[type=range]{
+    input[type='range'] {
         width: 40px;
         height: 40px;
         position: relative;
     }
 
-    #dialKnob{
+    #dialKnob {
         height: 30px;
         width: 30px;
         border-radius: 50%;
         filter: drop-shadow(3px 3px 3px #555);
         position: relative;
 
-        .dialRange{
+        .dialRange {
             opacity: 0;
             z-index: 6;
-          }
-        
+        }
 
-        #dialEmpty{
+        #dialEmpty {
             height: 30px;
             width: 30px;
             border-radius: 50%;
@@ -992,14 +975,14 @@ input:checked + .slider:before {
         }
     }
 
-    #dialNumInput{
+    #dialNumInput {
         height: 30%;
         width: 45px;
     }
 }
 
 //------------------------------------ BUTTON ---------------------------
-button{
+button {
     background-color: $dark;
     width: 40%;
     text-transform: capitalize;
@@ -1011,30 +994,30 @@ button{
     padding: 3px 5px 3px 5px;
     border-radius: 3px;
 
-    &:active{
+    &:active {
         background-color: darken($dark, 10%);
     }
 }
 
-@media only screen and (max-device-width: 480px){    
-    #App{
+@media only screen and (max-device-width: 480px) {
+    #App {
         visibility: 0;
         opacity: 0;
     }
 
-    #notAvailable{
+    #notAvailable {
         visibility: visible;
         opacity: 1;
     }
 }
 
-@media only screen and (max-device-width: 800px){
-    #App{
+@media only screen and (max-device-width: 800px) {
+    #App {
         visibility: 0;
         opacity: 0;
     }
 
-    #notAvailable{
+    #notAvailable {
         visibility: visible;
         opacity: 1;
     }

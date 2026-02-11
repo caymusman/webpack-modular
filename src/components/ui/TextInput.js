@@ -1,57 +1,44 @@
-import React from 'react';
+import { useState } from 'react';
 
-class TextInput extends React.Component {
-    constructor(props) {
-        super(props);
+function TextInput({ defaultVal, max, min, onSubmit, tooltipText, labelName }) {
+    const [val, setVal] = useState(defaultVal);
 
-        this.state = {
-            val: this.props.defaultVal,
-        };
-
-        this.handleChange = this.handleChange.bind(this);
-        this.handleNumSubmit = this.handleNumSubmit.bind(this);
-    }
-
-    handleChange(event) {
+    const handleChange = (event) => {
         if (isNaN(event.target.value) && event.target.value !== '0.') {
             return;
         }
-        this.setState({
-            val: event.target.value,
-        });
-    }
+        setVal(event.target.value);
+    };
 
-    handleNumSubmit() {
-        let temp = this.state.val;
-        if (temp > this.props.max) {
-            temp = this.props.max;
-            this.setState({ val: this.props.max });
-        } else if (temp < this.props.min) {
-            temp = this.props.min;
-            this.setState({ val: this.props.min });
+    const handleNumSubmit = () => {
+        let temp = val;
+        if (temp > max) {
+            temp = max;
+            setVal(max);
+        } else if (temp < min) {
+            temp = min;
+            setVal(min);
         }
-        this.props.onSubmit(this.props.tooltipText, Number(temp));
-    }
+        onSubmit(tooltipText, Number(temp));
+    };
 
-    render() {
-        return (
-            <label id={this.props.labelName + 'inputLabel'} className="tooltip">
-                <input
-                    value={this.state.val}
-                    type="text"
-                    onChange={this.handleChange}
-                    onKeyPress={(event) => {
-                        if (event.key === 'Enter') {
-                            this.handleNumSubmit();
-                        }
-                    }}
-                ></input>
-                <span id={this.props.labelName + 'Tip'} className="tooltiptext">
-                    {this.props.tooltipText}
-                </span>
-            </label>
-        );
-    }
+    return (
+        <label id={labelName + 'inputLabel'} className="tooltip">
+            <input
+                value={val}
+                type="text"
+                onChange={handleChange}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        handleNumSubmit();
+                    }
+                }}
+            ></input>
+            <span id={labelName + 'Tip'} className="tooltiptext">
+                {tooltipText}
+            </span>
+        </label>
+    );
 }
 
 export default TextInput;

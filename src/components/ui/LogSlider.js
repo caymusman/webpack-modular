@@ -1,88 +1,69 @@
-import React from 'react';
+import { useState } from 'react';
 
-class LogSlider extends React.Component {
-    constructor(props) {
-        super(props);
+function LogSlider({ labelName, tooltipText, min, max, mid, onChange }) {
+    const [val, setVal] = useState(Number(Math.log(mid) / Math.log(max)));
+    const [num, setNum] = useState(mid);
+    const [prevMid, setPrevMid] = useState(mid);
 
-        this.state = {
-            val: Number(Math.log(this.props.mid) / Math.log(this.props.max)),
-            num: this.props.mid,
-        };
-
-        this.handleChange = this.handleChange.bind(this);
-        this.handleNumChange = this.handleNumChange.bind(this);
-        this.handleNumFreqChange = this.handleNumFreqChange.bind(this);
+    // Adjust state when mid prop changes (React-recommended pattern)
+    if (mid !== prevMid) {
+        setPrevMid(mid);
+        setVal(Number(Math.log(mid) / Math.log(max)));
+        setNum(mid);
     }
 
-    handleChange(event) {
-        this.setState({
-            val: event.target.value,
-            num: Number((Math.pow(this.props.max, event.target.value) - 1).toFixed(2)),
-        });
-        this.props.onChange(Number((Math.pow(this.props.max, event.target.value) - 1).toFixed(2)));
-    }
+    const handleChange = (event) => {
+        setVal(event.target.value);
+        setNum(Number((Math.pow(max, event.target.value) - 1).toFixed(2)));
+        onChange(Number((Math.pow(max, event.target.value) - 1).toFixed(2)));
+    };
 
-    handleNumChange(event) {
+    const handleNumChange = (event) => {
         if (isNaN(event.target.value) && event.target.value !== '0.') {
             return;
         }
-        this.setState({
-            num: event.target.value,
-        });
-    }
+        setNum(event.target.value);
+    };
 
-    handleNumFreqChange() {
-        let temp = this.state.num;
-        if (temp > this.props.max - 1) {
-            temp = this.props.max - 1;
-        } else if (temp < this.props.min) {
-            temp = this.props.min;
+    const handleNumFreqChange = () => {
+        let temp = num;
+        if (temp > max - 1) {
+            temp = max - 1;
+        } else if (temp < min) {
+            temp = min;
         }
-        this.setState({
-            val: Math.log(Number(temp) + 1) / Math.log(this.props.max - 1),
-            num: Number(Number(temp).toFixed(2)),
-        });
-        this.props.onChange(Number(Number(temp).toFixed(2)));
-    }
+        setVal(Math.log(Number(temp) + 1) / Math.log(max - 1));
+        setNum(Number(Number(temp).toFixed(2)));
+        onChange(Number(Number(temp).toFixed(2)));
+    };
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.mid !== this.props.mid) {
-            this.setState({
-                val: Number(Math.log(this.props.mid) / Math.log(this.props.max)),
-                num: this.props.mid,
-            });
-        }
-    }
-
-    render() {
-        return (
-            <div id={this.props.labelName + 'logSliderWhole'} className="tooltip">
-                <input
-                    className={this.props.labelName + 'freqNumRange'}
-                    value={this.state.val}
-                    type="range"
-                    min={Number(Math.log(this.props.min + 1) / Math.log(this.props.max))}
-                    max={1}
-                    step="any"
-                    onChange={this.handleChange}
-                ></input>
-                <input
-                    id={this.props.labelName + 'freqNumInput'}
-                    value={this.state.num}
-                    type="text"
-                    onChange={this.handleNumChange}
-                    onKeyPress={(event) => {
-                        if (event.key === 'Enter') {
-                            this.handleNumFreqChange();
-                        }
-                    }}
-                ></input>
-                <span id={this.props.labelName + 'logSliderFreqTip'} className="tooltiptext">
-                    {this.props.tooltipText}
-                </span>
-            </div>
-        );
-    }
+    return (
+        <div id={labelName + 'logSliderWhole'} className="tooltip">
+            <input
+                className={labelName + 'freqNumRange'}
+                value={val}
+                type="range"
+                min={Number(Math.log(min + 1) / Math.log(max))}
+                max={1}
+                step="any"
+                onChange={handleChange}
+            ></input>
+            <input
+                id={labelName + 'freqNumInput'}
+                value={num}
+                type="text"
+                onChange={handleNumChange}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        handleNumFreqChange();
+                    }
+                }}
+            ></input>
+            <span id={labelName + 'logSliderFreqTip'} className="tooltiptext">
+                {tooltipText}
+            </span>
+        </div>
+    );
 }
 
 export default LogSlider;

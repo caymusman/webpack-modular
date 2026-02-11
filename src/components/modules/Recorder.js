@@ -1,91 +1,73 @@
-import React from 'react';
+import { useRef, useState, useEffect } from 'react';
 
-class Recorder extends React.Component {
-    constructor(props) {
-        super(props);
+function Recorder({ audioContext, createAudio }) {
+    const audio = useRef(audioContext.createGain());
+    const destination = useRef(audioContext.createMediaStreamDestination());
+    const mediaRecorder = useRef(null);
+    const chunks = useRef([]);
+    const [playing, setPlaying] = useState(false);
+    const [finished, setFinished] = useState(false);
+    const [href, setHref] = useState(null);
 
-        this.state = {
-            audio: this.props.audioContext.createGain(),
-            destination: this.props.audioContext.createMediaStreamDestination(),
-            mediaRecorder: null,
-            playing: false,
-            finished: false,
-            href: null,
+    useEffect(() => {
+        audio.current.connect(destination.current);
+        audio.current.gain.setValueAtTime(0, audioContext.currentTime);
+        const mr = new MediaRecorder(destination.current.stream, { mimeType: 'audio/ogg' });
+        mr.audioChannels = 2;
+        chunks.current = [];
+        mr.ondataavailable = (event) => {
+            chunks.current.push(event.data);
         };
+        mediaRecorder.current = mr;
+        createAudio(audio.current);
+    }, [audioContext, createAudio]);
 
-        this.handlePlay = this.handlePlay.bind(this);
-        this.handleFinish = this.handleFinish.bind(this);
-    }
-
-    handlePlay() {
-        if (this.state.playing) {
-            this.state.audio.gain.setTargetAtTime(0, this.props.audioContext.currentTime + 0.02, 0.02);
+    const handlePlay = () => {
+        if (playing) {
+            audio.current.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
             setTimeout(() => {
-                this.state.mediaRecorder.stop();
-                this.setState({
-                    playing: false,
-                });
+                mediaRecorder.current.stop();
+                setPlaying(false);
             }, 100);
         } else {
-            this.state.audio.gain.setTargetAtTime(1, this.props.audioContext.currentTime + 0.04, 0.04);
-            this.state.mediaRecorder.start();
-            this.setState({
-                playing: true,
-                finished: false,
-            });
+            audio.current.gain.setTargetAtTime(1, audioContext.currentTime + 0.04, 0.04);
+            mediaRecorder.current.start();
+            setPlaying(true);
+            setFinished(false);
         }
-    }
+    };
 
-    handleFinish() {
-        this.state.audio.gain.setTargetAtTime(0, this.props.audioContext.currentTime + 0.02, 0.02);
+    const handleFinish = () => {
+        audio.current.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
         setTimeout(() => {
-            this.state.mediaRecorder.stop();
+            mediaRecorder.current.stop();
         }, 100);
-        if (!this.state.finished) {
+        if (!finished) {
             setTimeout(() => {
-                const blob = new Blob(this.chunks, { type: 'audio/ogg' });
-                this.setState({
-                    href: URL.createObjectURL(blob),
-                    playing: false,
-                    finished: true,
-                });
+                const blob = new Blob(chunks.current, { type: 'audio/ogg' });
+                setHref(URL.createObjectURL(blob));
+                setPlaying(false);
+                setFinished(true);
             }, 510);
         }
-    }
+    };
 
-    componentDidMount() {
-        this.state.audio.connect(this.state.destination);
-        this.state.audio.gain.setValueAtTime(0, this.props.audioContext.currentTime);
-        const mr = new MediaRecorder(this.state.destination.stream, { mimeType: 'audio/ogg' });
-        mr.audioChannels = 2;
-        this.chunks = [];
-        mr.ondataavailable = (event) => {
-            this.chunks.push(event.data);
-        };
-        this.setState({
-            mediaRecorder: mr,
-        });
-        this.props.createAudio(this.state.audio);
-    }
-
-    render() {
-        return (
-            <div id="RecorderDiv">
-                <div id="recorderButtons">
-                    <button id="recorderPlay" onClick={this.handlePlay}>
-                        {this.state.playing ? 'Pause' : 'Record'}
-                    </button>
-                    <button id="recorderFinish" onClick={this.handleFinish}>
-                        Finish
-                    </button>
-                </div>
-                <a href={this.state.href} download="recordedAudio.ogg">
-                    {' '}
-                    Download Here
-                </a>
+    return (
+        <div id="RecorderDiv">
+            <div id="recorderButtons">
+                <button id="recorderPlay" onClick={handlePlay}>
+                    {playing ? 'Pause' : 'Record'}
+                </button>
+                <button id="recorderFinish" onClick={handleFinish}>
+                    Finish
+                </button>
             </div>
-        );
-    }
+            <a href={href} download="recordedAudio.ogg">
+                {' '}
+                Download Here
+            </a>
+        </div>
+    );
 }
 
 export default Recorder;

@@ -1,64 +1,48 @@
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
 
-class AudioInput extends React.Component {
-    constructor(props) {
-        super(props);
+function AudioInput({ alert, handleClose, audioContext, createAudio }) {
+    const outputGain = useRef(audioContext.createGain());
+    const mediaStream = useRef(null);
 
-        this.state = {
-            outputGain: this.props.audioContext.createGain(),
-        };
-
-        this.setGain = this.setGain.bind(this);
-    }
-
-    setGain(val) {
-        this.state.outputGain.gain.setValueAtTime(val, this.props.audioContext.currentTime);
-    }
-
-    componentDidMount() {
+    useEffect(() => {
+        const gainNode = outputGain.current;
         if (navigator.mediaDevices) {
             navigator.mediaDevices
                 .getUserMedia({ audio: true })
                 .then((stream) => {
-                    this.mediaStream = stream;
-                    const audio = this.props.audioContext.createMediaStreamSource(stream);
-                    audio.connect(this.state.outputGain);
-                    this.state.outputGain.gain.setValueAtTime(0.5, this.props.audioContext.currentTime);
-                    this.props.createAudio(this.state.outputGain);
+                    mediaStream.current = stream;
+                    const audio = audioContext.createMediaStreamSource(stream);
+                    audio.connect(gainNode);
+                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                    createAudio(gainNode);
                 })
                 .catch((err) => {
                     console.warn('When setting up media devices, I caught: \n' + err); // eslint-disable-line no-console
-                    this.props.handleClose();
-                    this.props.alert('You denied audio permissions. Allow permissions to create this module.');
+                    handleClose();
+                    alert('You denied audio permissions. Allow permissions to create this module.');
                 });
         } else {
             console.warn('Media Devices are not supported!'); // eslint-disable-line no-console
-            this.props.handleClose();
-            this.props.alert('Media Devices are not supported.');
+            handleClose();
+            alert('Media Devices are not supported.');
         }
-    }
 
-    componentWillUnmount() {
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach((track) => track.stop());
-        }
-        this.state.outputGain.disconnect();
-    }
+        return () => {
+            if (mediaStream.current) {
+                mediaStream.current.getTracks().forEach((track) => track.stop());
+            }
+            gainNode.disconnect();
+        };
+    }, [audioContext, createAudio, handleClose, alert]);
 
-    render() {
-        return (
-            <Slider
-                labelName="audioInGain"
-                tooltipText="Gain"
-                min={0}
-                max={1}
-                step={0.01}
-                mid={0.5}
-                setAudio={this.setGain}
-            />
-        );
-    }
+    const setGain = (val) => {
+        outputGain.current.gain.setValueAtTime(val, audioContext.currentTime);
+    };
+
+    return (
+        <Slider labelName="audioInGain" tooltipText="Gain" min={0} max={1} step={0.01} mid={0.5} setAudio={setGain} />
+    );
 }
 
 export default AudioInput;

@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import App from '../App';
 
@@ -52,7 +51,7 @@ describe('Slider (via Gain module)', () => {
     test('Enter key submits numeric value', () => {
         const numInput = container.querySelector('#gainNumInput');
         fireEvent.change(numInput, { target: { value: '0.3' } });
-        fireEvent.keyPress(numInput, { key: 'Enter', charCode: 13 });
+        fireEvent.keyDown(numInput, { key: 'Enter', charCode: 13 });
         // After submit, the range input should reflect the numeric value
         const rangeInput = container.querySelector('#gainRangeInput');
         expect(rangeInput.value).toBe('0.3');

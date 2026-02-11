@@ -1,39 +1,29 @@
-import React from 'react';
+import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
 
-class Delay extends React.Component {
-    constructor(props) {
-        super(props);
+function Delay({ audioContext, createAudio }) {
+    const audio = useRef(audioContext.createDelay(5.0));
 
-        this.state = {
-            audio: this.props.audioContext.createDelay(5.0),
-        };
+    useEffect(() => {
+        createAudio(audio.current);
+    }, [createAudio]);
 
-        this.handleDelayTime = this.handleDelayTime.bind(this);
-    }
+    const handleDelayTime = (val) => {
+        audio.current.delayTime.setValueAtTime(val, audioContext.currentTime);
+    };
 
-    handleDelayTime(val) {
-        this.state.audio.delayTime.setValueAtTime(val, this.props.audioContext.currentTime);
-    }
-
-    componentDidMount() {
-        this.props.createAudio(this.state.audio);
-    }
-
-    render() {
-        return (
-            <div id="delayDiv">
-                <Slider
-                    labelName="delayDelayTime"
-                    tooltipText="Delay Time (s)"
-                    min={0}
-                    max={5}
-                    step={0.01}
-                    setAudio={this.handleDelayTime}
-                ></Slider>
-            </div>
-        );
-    }
+    return (
+        <div id="delayDiv">
+            <Slider
+                labelName="delayDelayTime"
+                tooltipText="Delay Time (s)"
+                min={0}
+                max={5}
+                step={0.01}
+                setAudio={handleDelayTime}
+            ></Slider>
+        </div>
+    );
 }
 
 export default Delay;

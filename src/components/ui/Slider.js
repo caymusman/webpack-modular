@@ -1,84 +1,66 @@
-import React from 'react';
+import { useState } from 'react';
 
-class Slider extends React.Component {
-    constructor(props) {
-        super(props);
+function Slider({ labelName, tooltipText, min, max, step, setAudio }) {
+    const [num, setNum] = useState((max + min) / 2);
+    const [val, setVal] = useState((max + min) / 2);
 
-        this.state = {
-            num: (this.props.max + this.props.min) / 2,
-            val: (this.props.max + this.props.min) / 2,
-        };
-
-        this.handleRangeChange = this.handleRangeChange.bind(this);
-        this.handleNumChange = this.handleNumChange.bind(this);
-        this.handleNumSubmit = this.handleNumSubmit.bind(this);
-    }
-
-    handleRangeChange(event) {
-        let val = event.target.value;
-        if (val > this.props.max) {
-            val = this.props.max;
-        } else if (val < this.props.min) {
-            val = this.props.min;
+    const handleRangeChange = (event) => {
+        let v = event.target.value;
+        if (v > max) {
+            v = max;
+        } else if (v < min) {
+            v = min;
         }
-        this.props.setAudio(val);
-        this.setState({
-            val: val,
-            num: val,
-        });
-    }
+        setAudio(v);
+        setVal(v);
+        setNum(v);
+    };
 
-    handleNumChange(event) {
+    const handleNumChange = (event) => {
         if (isNaN(event.target.value) && event.target.value !== '-') {
             return;
         }
-        this.setState({
-            num: event.target.value,
-        });
-    }
+        setNum(event.target.value);
+    };
 
-    handleNumSubmit() {
-        let temp = this.state.num;
-        if (temp > this.props.max) {
-            temp = this.props.max;
-        } else if (temp < this.props.min) {
-            temp = this.props.min;
+    const handleNumSubmit = () => {
+        let temp = num;
+        if (temp > max) {
+            temp = max;
+        } else if (temp < min) {
+            temp = min;
         }
-        this.setState({
-            val: temp,
-            num: temp,
-        });
-    }
+        setVal(temp);
+        setNum(temp);
+    };
 
-    render() {
-        return (
-            <div id={this.props.labelName + 'Div'} className="tooltip">
-                <input
-                    id={this.props.labelName + 'Range'}
-                    type="range"
-                    value={this.state.val}
-                    min={this.props.min}
-                    max={this.props.max}
-                    step={this.props.step}
-                    onChange={this.handleRangeChange}
-                ></input>
-                <input
-                    id={this.props.labelName + 'Number'}
-                    value={this.state.num}
-                    type="text"
-                    onChange={this.handleNumChange}
-                    onKeyPress={(event) => {
-                        if (event.key === 'Enter') {
-                            this.handleNumSubmit();
-                        }
-                    }}
-                ></input>
-                <span id={this.props.labelName + 'Span'} className="tooltiptext">
-                    {this.props.tooltipText}
-                </span>
-            </div>
-        );
-    }
+    return (
+        <div id={labelName + 'Div'} className="tooltip">
+            <input
+                id={labelName + 'Range'}
+                type="range"
+                value={val}
+                min={min}
+                max={max}
+                step={step}
+                onChange={handleRangeChange}
+            ></input>
+            <input
+                id={labelName + 'Number'}
+                value={num}
+                type="text"
+                onChange={handleNumChange}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        handleNumSubmit();
+                    }
+                }}
+            ></input>
+            <span id={labelName + 'Span'} className="tooltiptext">
+                {tooltipText}
+            </span>
+        </div>
+    );
 }
 
 export default Slider;

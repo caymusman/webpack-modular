@@ -1,18 +1,14 @@
-import React from 'react';
+import { useRef, useState, useEffect } from 'react';
 
-class Output extends React.Component {
-    constructor(props) {
-        super(props);
+function Output({ handleOutput, audioContext }) {
+    const gainNode = useRef(audioContext.createGain());
+    const [value, setValue] = useState(0.5);
 
-        this.state = {
-            gainNode: this.props.audioContext.createGain(),
-            value: 0.5,
-        };
-        this.handleOutput = this.handleOutput.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-    }
+    useEffect(() => {
+        gainNode.current.connect(audioContext.destination);
+    }, [audioContext]);
 
-    handleOutput(event) {
+    const onOutput = (event) => {
         const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
         const el = event.target.getBoundingClientRect();
         const x = el.x;
@@ -22,45 +18,37 @@ class Output extends React.Component {
         const xCenter = (right - x) / 2 + x - largerDim * 0.04;
         const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
 
-        this.props.handleOutput({
+        handleOutput({
             tomyKey: 'Output',
             toLocation: { x: xCenter, y: yCenter },
-            audio: this.state.gainNode,
+            audio: gainNode.current,
         });
-    }
+    };
 
-    handleChange(event) {
-        this.state.gainNode.gain.setValueAtTime(event.target.value, this.props.audioContext.currentTime);
-        this.setState({
-            value: event.target.value,
-        });
-    }
+    const handleChange = (event) => {
+        gainNode.current.gain.setValueAtTime(event.target.value, audioContext.currentTime);
+        setValue(event.target.value);
+    };
 
-    componentDidMount() {
-        this.state.gainNode.connect(this.props.audioContext.destination);
-    }
-
-    render() {
-        return (
-            <div id="outputDiv">
-                <p>Output</p>
-                <div id="outputCenter">
-                    <input
-                        id="gainSlider"
-                        value={this.state.value}
-                        type="range"
-                        min="0"
-                        max="1"
-                        step=".05"
-                        onChange={this.handleChange}
-                    ></input>
-                </div>
-                <div className="cordOuter" onClick={this.handleOutput}>
-                    <div className="cordInner" id={'Output' + 'inputInner'}></div>
-                </div>
+    return (
+        <div id="outputDiv">
+            <p>Output</p>
+            <div id="outputCenter">
+                <input
+                    id="gainSlider"
+                    value={value}
+                    type="range"
+                    min="0"
+                    max="1"
+                    step=".05"
+                    onChange={handleChange}
+                ></input>
             </div>
-        );
-    }
+            <div className="cordOuter" onClick={onOutput}>
+                <div className="cordInner" id={'Output' + 'inputInner'}></div>
+            </div>
+        </div>
+    );
 }
 
 export default Output;

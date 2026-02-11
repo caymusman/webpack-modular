@@ -1,62 +1,60 @@
-import React from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Selector from '../ui/Selector';
 import LogSlider from '../ui/LogSlider';
 import Slider from '../ui/Slider';
 
-//Oscillator Module
-class Oscillator extends React.Component {
-    constructor(props) {
-        super(props);
+function Oscillator({ audioContext, createAudio, parent, handleOutput }) {
+    const audio = useRef(audioContext.createOscillator());
+    const modulatorGain = useRef(audioContext.createGain());
+    const [min, setMin] = useState(20);
+    const [max, setMax] = useState(20001);
+    const [mid, setMid] = useState(440);
+    const [LFO, setLFO] = useState(false);
 
-        this.state = {
-            audio: this.props.audioContext.createOscillator(),
-            wave: 'sine',
-            min: 20,
-            max: 20001,
-            mid: 440,
-            LFO: false,
-            modulatorGain: this.props.audioContext.createGain(),
+    useEffect(() => {
+        const oscNode = audio.current;
+        const modGainNode = modulatorGain.current;
+        createAudio(oscNode);
+        oscNode.frequency.setValueAtTime(440, audioContext.currentTime);
+        modGainNode.connect(oscNode.frequency);
+        oscNode.start();
+
+        return () => {
+            try {
+                oscNode.stop();
+            } catch (_e) {
+                /* oscillator may already be stopped */
+            }
+            oscNode.disconnect();
+            modGainNode.disconnect();
         };
+    }, [createAudio, audioContext]);
 
-        this.setFreq = this.setFreq.bind(this);
-        this.handleWaveChange = this.handleWaveChange.bind(this);
-        this.handleLFOClick = this.handleLFOClick.bind(this);
-        this.handleOutput = this.handleOutput.bind(this);
-        this.setModDepth = this.setModDepth.bind(this);
-    }
+    const setFreq = (val) => {
+        audio.current.frequency.setValueAtTime(Number(val), audioContext.currentTime);
+    };
 
-    setFreq(val) {
-        this.state.audio.frequency.setValueAtTime(Number(val), this.props.audioContext.currentTime);
-    }
+    const handleWaveChange = (w) => {
+        audio.current.type = w;
+    };
 
-    handleWaveChange(wave) {
-        this.state.audio.type = wave;
-        this.setState({
-            wave: wave,
-        });
-    }
-
-    handleLFOClick() {
-        if (this.state.LFO) {
-            this.setState({
-                max: 20001,
-                min: 20,
-                mid: 440,
-                LFO: false,
-            });
-            this.state.audio.frequency.setValueAtTime(440, this.props.audioContext.currentTime);
+    const handleLFOClick = () => {
+        if (LFO) {
+            setMax(20001);
+            setMin(20);
+            setMid(440);
+            setLFO(false);
+            audio.current.frequency.setValueAtTime(440, audioContext.currentTime);
         } else {
-            this.setState({
-                max: 21,
-                min: 0,
-                mid: 10,
-                LFO: true,
-            });
-            this.state.audio.frequency.setValueAtTime(10, this.props.audioContext.currentTime);
+            setMax(21);
+            setMin(0);
+            setMid(10);
+            setLFO(true);
+            audio.current.frequency.setValueAtTime(10, audioContext.currentTime);
         }
-    }
+    };
 
-    handleOutput(event) {
+    const onOutput = (event) => {
         const largerDim = window.innerHeight > window.innerWidth ? window.innerHeight : window.innerWidth;
         const el = event.target.getBoundingClientRect();
         const x = el.x;
@@ -66,79 +64,49 @@ class Oscillator extends React.Component {
         const xCenter = (right - x) / 2 + x - largerDim * 0.04;
         const yCenter = (bottom - y) / 2 + y - largerDim * 0.04;
 
-        this.props.handleOutput({
-            tomyKey: this.props.parent + ' param',
+        handleOutput({
+            tomyKey: parent + ' param',
             toLocation: { x: xCenter, y: yCenter },
-            audio: this.state.modulatorGain,
+            audio: modulatorGain.current,
         });
-    }
+    };
 
-    setModDepth(val) {
-        this.state.modulatorGain.gain.setValueAtTime(val, this.props.audioContext.currentTime);
-    }
+    const setModDepth = (val) => {
+        modulatorGain.current.gain.setValueAtTime(val, audioContext.currentTime);
+    };
 
-    componentDidMount() {
-        this.props.createAudio(this.state.audio);
-        this.state.audio.frequency.setValueAtTime(this.state.mid, this.props.audioContext.currentTime);
-        this.state.modulatorGain.connect(this.state.audio.frequency);
-        this.state.audio.start();
-    }
-
-    componentWillUnmount() {
-        try {
-            this.state.audio.stop();
-        } catch (_e) {
-            /* oscillator may already be stopped */
-        }
-        this.state.audio.disconnect();
-        this.state.modulatorGain.disconnect();
-    }
-
-    render() {
-        return (
-            <div className="oscDiv">
-                <div id="oscBoxOne">
-                    <Selector
-                        id="waveSelector"
-                        values={['sine', 'sawtooth', 'triangle']}
-                        handleClick={this.handleWaveChange}
-                    />
-                    <label id="oscSlider" className="switch tooltip">
-                        <input type="checkbox" onClick={this.handleLFOClick}></input>
-                        <span className="slider round"></span>
-                        <span id="oscLFOTip" className="tooltiptext">
-                            LFO Mode
+    return (
+        <div className="oscDiv">
+            <div id="oscBoxOne">
+                <Selector id="waveSelector" values={['sine', 'sawtooth', 'triangle']} handleClick={handleWaveChange} />
+                <label id="oscSlider" className="switch tooltip">
+                    <input type="checkbox" onClick={handleLFOClick}></input>
+                    <span className="slider round"></span>
+                    <span id="oscLFOTip" className="tooltiptext">
+                        LFO Mode
+                    </span>
+                </label>
+            </div>
+            <LogSlider
+                labelName="oscFreq"
+                tooltipText="Oscillator Frequency"
+                min={min}
+                max={max}
+                mid={mid}
+                onChange={setFreq}
+            />
+            <div className="cordOuter tooltip" id="firstParam" onClick={onOutput}>
+                <div className="cordInner" id={parent + ' param' + ' inputInner'}>
+                    <div id="ttWrapper">
+                        <span id="oscDetuneParamTip" className="tooltiptext">
+                            <span className="paramSpan">param: </span>frequency
                         </span>
-                    </label>
-                </div>
-                <LogSlider
-                    labelName="oscFreq"
-                    tooltipText="Oscillator Frequency"
-                    min={this.state.min}
-                    max={this.state.max}
-                    mid={this.state.mid}
-                    onChange={this.setFreq}
-                />
-                <div className="cordOuter tooltip" id="firstParam" onClick={this.handleOutput}>
-                    <div className="cordInner" id={this.props.parent + ' param' + ' inputInner'}>
-                        <div id="ttWrapper">
-                            <span id="oscDetuneParamTip" className="tooltiptext">
-                                <span className="paramSpan">param: </span>frequency
-                            </span>
-                        </div>
                     </div>
                 </div>
-                <Slider
-                    labelName="oscModGain"
-                    tooltipText="Mod Depth"
-                    min={0}
-                    max={300}
-                    mid={150}
-                    setAudio={this.setModDepth}
-                />
             </div>
-        );
-    }
+            <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} mid={150} setAudio={setModDepth} />
+        </div>
+    );
 }
 
 export default Oscillator;
