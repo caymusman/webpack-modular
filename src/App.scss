@@ -221,6 +221,12 @@ body {
             }
         }
 
+        .iconBtn {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
         .fa-times {
             color: $light;
             visibility: hidden;
