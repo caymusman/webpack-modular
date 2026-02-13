@@ -46,7 +46,7 @@ function Dial({ name, min, max, onChange }: DialProps) {
     return (
         <div className="dialWhole">
             <div id="dialKnob" className="tooltip">
-                <span id={name + 'dialtip'} className="tooltiptext">
+                <span className="tooltiptext">
                     {name}
                 </span>
                 <input

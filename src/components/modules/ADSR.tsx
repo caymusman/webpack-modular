@@ -94,7 +94,7 @@ function ADSR({ createAudio }: ADSRProps) {
                 <label id="ADSRCheck" className="switch tooltip">
                     <input type="checkbox" onClick={handleToggle} aria-label="LFO Mode"></input>
                     <span className="slider round"></span>
-                    <span id="ADSRCheckTip" className="tooltiptext">
+                    <span className="tooltiptext">
                         LFO Mode
                     </span>
                 </label>

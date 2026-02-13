@@ -49,6 +49,7 @@ body {
     cursor: pointer;
     color: inherit;
     font-size: inherit;
+    width: auto;
 }
 
 #mainDiv {
@@ -137,56 +138,92 @@ body {
         }
     }
 
-    .pingBox {
-        width: 30vmax;
-        height: 15vmax;
+    .alertBox {
         position: absolute;
+        top: 24px;
         left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        background: $dark;
+        transform: translateX(-50%) translateY(-120%);
+        opacity: 0;
         z-index: 200;
         display: flex;
-        flex-direction: column;
-        filter: drop-shadow(0 0 10px $dark);
+        align-items: stretch;
+        min-width: 320px;
+        max-width: 480px;
+        background: color.adjust($dark, $lightness: -5%);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+        transition:
+            transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-        #pingTextDiv {
-            width: 100%;
-            height: 25%;
-            margin-top: 0px;
-            background: rgb(150, 91, 91);
-            text-align: center;
-            text-decoration-color: $cancelRed;
-
-            .error {
-                color: $light;
-            }
-        }
-        #pingText {
-            margin: auto;
-            color: $light;
-            font-size: 120%;
-            font-style: oblique;
-            width: 80%;
-            text-align: center;
+        &--visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
         }
 
-        .fa-times-circle {
-            position: absolute;
-            right: -1vmax;
-            top: -1.2vmax;
-            font-size: 2vmax;
+        &__icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 14px;
+            background: $cancelRed;
             color: $light;
-            transition:
-                transform 0.6s,
-                filter 0.6s,
-                color 0.6s;
-            cursor: pointer;
+            font-size: 18px;
+        }
+
+        &__body {
+            flex: 1;
+            padding: 10px 16px;
+        }
+
+        &__title {
+            margin: 0 0 2px;
+            font-size: 13px;
+            font-weight: 700;
+            color: $light;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        &__message {
+            margin: 0;
+            font-size: 14px;
+            color: color.adjust($light, $lightness: -10%);
+            line-height: 1.4;
+        }
+
+        &__close {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            color: color.adjust($light, $lightness: -20%);
+            font-size: 14px;
+            transition: color 0.2s;
+
             &:hover {
                 color: $cancelRed;
-                transform: rotate(180deg);
-                filter: drop-shadow(0 0 2px $dark);
             }
+        }
+
+        &__timer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: $cancelRed;
+            animation: alertTimer 4s linear forwards;
+        }
+    }
+
+    @keyframes alertTimer {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
         }
     }
 
@@ -299,6 +336,11 @@ body {
 
         .cordInner {
             background-color: $dark;
+        }
+
+        .tooltiptext {
+            bottom: calc(100% + 4px);
+            font-size: 11px;
         }
     }
 
@@ -676,6 +718,7 @@ svg {
         stroke: $dark;
         stroke-width: 3;
         pointer-events: all;
+        cursor: pointer;
 
         &:hover {
             stroke: $cancelRed;
@@ -693,6 +736,13 @@ svg {
 
 .raise {
     filter: drop-shadow(0 0 5px $light);
+}
+
+.patchSource {
+    visibility: visible;
+    opacity: 1;
+    filter: drop-shadow(0 0 8px $light);
+    transform: translate(50%) scale(1.2);
 }
 
 //----------------------------------------NUMBER INPUT----------------------------------------
@@ -728,102 +778,26 @@ input:focus {
 
 //------------------------------------------------TOOLTIP----------------------------------------
 
-#ttWrapper {
-    width: 0;
-    height: 0;
-    position: relative;
-}
 .tooltiptext {
     visibility: hidden;
-    width: 60px;
+    width: max-content;
     font-size: 12px;
     background-color: color.adjust($dark, $lightness: 10%);
     color: $light;
     text-align: center;
     border-radius: 6px;
-    padding: 5px;
-    display: block;
-    z-index: 100;
-
-    /* Position the tooltip */
+    padding: 5px 8px;
     position: absolute;
-    bottom: 125%;
-    z-index: 1;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    white-space: nowrap;
 
     .paramSpan {
         color: white;
         text-decoration: underline;
     }
-}
-//osc
-#oscFreqTip {
-    transform: translate(55px, -80px);
-}
-
-#oscModGainSpan {
-    transform: translate(50px, 5px);
-}
-
-#oscFreqlogSliderFreqTip {
-    left: 47px;
-    transform: translateY(5px);
-}
-
-#oscDetuneParamTip {
-    transform: translate(-29px, -10px);
-}
-
-//gain
-
-#gainGainParamTip {
-    transform: translate(-30px, -3px);
-}
-
-//filter
-
-#Qdialtip {
-    transform: translate(-11px, -3px);
-}
-
-#filterGainSpan {
-    transform: translate(51px, 5px);
-}
-
-#filterFreqlogSliderFreqTip {
-    transform: translate(51px, 5px);
-}
-
-//pan
-
-#panPanSpan {
-    transform: translate(51px, 5px);
-}
-
-//ADSR
-
-#ADSRSliderlogSliderFreqTip {
-    transform: translate(55px, 5px);
-}
-
-#ADSRCheckTip {
-    transform: translate(-4px, -3px);
-}
-
-//Delay
-
-#delayDelayTimeSpan {
-    transform: translate(51px, 5px);
-}
-
-//Distortion
-#distortionCurveSpan {
-    transform: translate(51px, 5px);
-}
-
-//AudioInput
-
-#audioInGainSpan {
-    transform: translate(50px, 5px);
 }
 
 .tooltip {
@@ -840,9 +814,9 @@ input:focus {
 .tooltiptext::after {
     content: ' ';
     position: absolute;
-    top: 100%; /* At the bottom of the tooltip */
+    top: 100%;
     left: 50%;
-    margin-left: -5px;
+    transform: translateX(-50%);
     border-width: 5px;
     border-style: solid;
     border-color: color.adjust($dark, $lightness: 10%) transparent transparent transparent;
@@ -1013,6 +987,51 @@ button {
 
     &:active {
         background-color: color.adjust($dark, $lightness: -10%);
+    }
+}
+
+//---------------------------------------- ERROR BOUNDARY ----------------------------------------
+
+.errorBoundary {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background-color: $dark;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    &__title {
+        color: $mainPurple;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    &__message {
+        color: $light;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        max-width: 60%;
+    }
+
+    &__reload {
+        background-color: $mainPurple;
+        color: $dark;
+        font-size: 1rem;
+        padding: 0.5rem 2rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        width: auto;
+
+        &:hover {
+            filter: brightness(1.1);
+        }
     }
 }
 

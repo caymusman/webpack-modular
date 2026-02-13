@@ -44,7 +44,7 @@ function TextInput({ defaultVal, max, min, onSubmit, tooltipText, labelName }: T
                 }}
                 aria-label={tooltipText}
             ></input>
-            <span id={labelName + 'Tip'} className="tooltiptext">
+            <span className="tooltiptext">
                 {tooltipText}
             </span>
         </label>

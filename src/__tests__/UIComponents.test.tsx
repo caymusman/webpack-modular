@@ -533,7 +533,7 @@ describe('Dial (via Filter Q)', () => {
     });
 
     test('dial has tooltip showing Q', () => {
-        const tooltip = container.querySelector('#Qdialtip');
+        const tooltip = container.querySelector('#dialKnob .tooltiptext');
         expect(tooltip).toBeTruthy();
         expect(tooltip.textContent).toBe('Q');
     });

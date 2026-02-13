@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect, useRef, createRef, ReactElement } from 'react';
+import { useState, useCallback, useEffect, createRef, ReactElement } from 'react';
 import Draggable from 'react-draggable';
+import AlertBox from './components/AlertBox';
 import Area from './components/Area';
 import Cord from './components/Cord';
 import Output from './components/Output';
@@ -11,36 +12,33 @@ import { PatchCord, CordFromData, CordToData, ModuleRecord, CordCombos } from '.
 export default function App() {
     const [list, setList] = useState<Map<string, ModuleRecord>>(new Map());
     const [patchCords, setPatchCords] = useState<PatchCord[]>([]);
-    const [currentCordCount, setCurrentCordCount] = useState(0);
     const [cumulativeCordCount, setCumulativeCordCount] = useState(0);
     const [outputMode, setOutputMode] = useState(false);
     const [cordCombos, setCordCombos] = useState<CordCombos>({});
-    const [alert, setAlert] = useState(false);
     const [pingText, setPingText] = useState('');
     const [audioIn, setAudioIn] = useState(false);
-    const nodeRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
+    const [patchSource, setPatchSource] = useState<string | null>(null);
+    const [nodeRefs] = useState(() => new Map<string, React.RefObject<HTMLDivElement>>());
 
     const getNodeRef = useCallback((key: string) => {
-        if (!nodeRefs.current.has(key)) {
-            nodeRefs.current.set(key, createRef<HTMLDivElement>());
+        if (!nodeRefs.has(key)) {
+            nodeRefs.set(key, createRef<HTMLDivElement>());
         }
-        return nodeRefs.current.get(key)!;
-    }, []);
+        return nodeRefs.get(key)!;
+    }, [nodeRefs]);
 
     const handlePatchExit = useCallback(() => {
         setPatchCords((prev) => prev.slice(0, -1));
-        setCurrentCordCount((c) => c - 1);
         setCumulativeCordCount((c) => c - 1);
+        setPatchSource(null);
         setOutputMode(false);
     }, []);
 
     const myAlert = useCallback((ping: string) => {
-        setAlert(true);
         setPingText(ping);
     }, []);
 
     const handlePingExit = useCallback(() => {
-        setAlert(false);
         setPingText('');
     }, []);
 
@@ -68,7 +66,7 @@ export default function App() {
     );
 
     const handleClose = useCallback((childKey: string) => {
-        nodeRefs.current.delete(childKey);
+        nodeRefs.delete(childKey);
 
         setList((prev) => {
             const newMap = new Map(prev);
@@ -98,12 +96,6 @@ export default function App() {
             return prevCords.filter((el) => !toRemove.includes(el));
         });
 
-        setCurrentCordCount((c) => {
-            // We need to calculate how many cords were removed; handled in setPatchCords
-            return c; // Will be corrected below
-        });
-
-        // Use a combined update to handle cord count and combos correctly
         setCordCombos((prev) => {
             const newCombos = { ...prev };
             // Remove references to childKey from other modules' combo lists
@@ -115,18 +107,13 @@ export default function App() {
             delete newCombos[childKey];
             return newCombos;
         });
-    }, []);
-
-    // Fix: recalculate currentCordCount when patchCords changes
-    useEffect(() => {
-        setCurrentCordCount(patchCords.length);
-    }, [patchCords]);
+    }, [nodeRefs]);
 
     const addCord = useCallback(
         (info: CordFromData) => {
             setPatchCords((prev) => [...prev, { id: 'cord' + cumulativeCordCount, fromData: info, toData: null }]);
-            setCurrentCordCount((c) => c + 1);
             setCumulativeCordCount((c) => c + 1);
+            setPatchSource(info.fromModID);
             setOutputMode(true);
         },
         [cumulativeCordCount]
@@ -135,10 +122,9 @@ export default function App() {
     const handleOutput = useCallback(
         (info: CordToData) => {
             if (outputMode) {
-                const lastIdx = currentCordCount - 1;
                 setPatchCords((prevCords) => {
                     const newCords = [...prevCords];
-                    const lastEl = newCords[lastIdx];
+                    const lastEl = newCords[prevCords.length - 1];
                     if (!lastEl) return prevCords;
                     const fromMod = lastEl.fromData.fromModID;
 
@@ -165,33 +151,30 @@ export default function App() {
                         return newCords;
                     }
                 });
+                setPatchSource(null);
                 setOutputMode(false);
             }
         },
-        [outputMode, currentCordCount, cordCombos, myAlert]
+        [outputMode, cordCombos, myAlert]
     );
 
     const deleteCord = useCallback((cordID: string) => {
         setPatchCords((prevCords) => {
-            for (let i = 0; i < prevCords.length; i++) {
-                if (prevCords[i].id === cordID) {
-                    prevCords[i].fromData.audio.disconnect(prevCords[i].toData!.audio as AudioNode);
-                    // Remove from cordCombos
-                    const cordVal = prevCords[i];
-                    const fromCombo = cordVal.fromData.fromModID;
-                    setCordCombos((prev) => {
-                        const newCombo = { ...prev };
-                        if (newCombo[fromCombo]) {
-                            newCombo[fromCombo] = newCombo[fromCombo].filter((v) => v !== cordVal.toData!.tomyKey);
-                        }
-                        return newCombo;
-                    });
-                    break;
-                }
+            const cord = prevCords.find((el) => el.id === cordID);
+            if (cord) {
+                cord.fromData.audio.disconnect(cord.toData!.audio as AudioNode);
+                // Update cordCombos inside setPatchCords callback to access cord data
+                const fromCombo = cord.fromData.fromModID;
+                setCordCombos((prev) => {
+                    const newCombo = { ...prev };
+                    if (newCombo[fromCombo]) {
+                        newCombo[fromCombo] = newCombo[fromCombo].filter((v) => v !== cord.toData!.tomyKey);
+                    }
+                    return newCombo;
+                });
             }
             return prevCords.filter((el) => el.id !== cordID);
         });
-        setCurrentCordCount((c) => c - 1);
     }, []);
 
     const handleDrag = useCallback(
@@ -261,7 +244,9 @@ export default function App() {
                     y1={el.fromData.fromLocation.y}
                     x2={el.toData!.toLocation.x}
                     y2={el.toData!.toLocation.y}
-                ></Cord>
+                    fromName={getModuleType(el.fromData.fromModID)}
+                    toName={getModuleType(el.toData!.tomyKey)}
+                />
             );
         }
     });
@@ -275,13 +260,7 @@ export default function App() {
             </div>
             <div id="playSpace">
                 <svg id="patchCords" aria-label="Patch cord connections">{cords}</svg>
-                <div className={alert ? 'show pingBox' : 'hide pingBox'}>
-                    <div id="pingTextDiv">
-                        <h3 className="error">Not so fast!</h3>
-                    </div>
-                    <p id="pingText">{pingText}</p>
-                    <button id="pingExit" onClick={handlePingExit} aria-label="Dismiss alert" className="iconBtn"><i className="fa fa-times-circle" aria-hidden="true"></i></button>
-                </div>
+                <AlertBox message={pingText} onDismiss={handlePingExit} />
                 <button
                     id="patchExit"
                     onClick={handlePatchExit}
@@ -313,6 +292,7 @@ export default function App() {
                                     handleOutput={handleOutput}
                                     inputOnly={inputOnly}
                                     alert={myAlert}
+                                    patchSource={patchSource}
                                 />
                             </div>
                         </Draggable>

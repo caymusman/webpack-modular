@@ -175,9 +175,10 @@ describe('Patch cord validation', () => {
         // Try to connect to the Output module (this is a valid connection, not self-patch)
         // Instead, let's create a scenario that triggers an alert
         // We need a module that can self-patch — but that requires outputMode + clicking own input
-        // For now, just verify the pingBox starts hidden
-        const pingBox = container.querySelector('.pingBox');
-        expect(pingBox.className).toContain('hide');
+        // For now, just verify the alertBox starts hidden
+        const alertBox = container.querySelector('.alertBox');
+        expect(alertBox).toBeTruthy();
+        expect(alertBox.className).not.toContain('alertBox--visible');
     });
 });
 

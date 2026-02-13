@@ -21,7 +21,8 @@ function Reverb({ createAudio }: ReverbProps) {
             fetch(path)
                 .then((res) => res.arrayBuffer())
                 .then((buffer) => audioContext.decodeAudioData(buffer))
-                .then((final) => setConvolverBuffer(audio.current, final));
+                .then((final) => setConvolverBuffer(audio.current, final))
+                .catch((err) => console.warn('Reverb: failed to load impulse response', path, err));
         },
         [audioContext]
     );

@@ -7,9 +7,11 @@ interface CordProps {
     y1: number;
     x2: number;
     y2: number;
+    fromName: string;
+    toName: string;
 }
 
-function Cord({ deleteCord, id, x1, y1, x2, y2 }: CordProps) {
+function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
     const handleClick = () => {
         deleteCord(id);
     };
@@ -21,7 +23,7 @@ function Cord({ deleteCord, id, x1, y1, x2, y2 }: CordProps) {
         }
     };
 
-    return <line x1={x1} y1={y1} x2={x2} y2={y2} onClick={handleClick} role="button" aria-label={'Delete patch cord ' + id} tabIndex={0} onKeyDown={handleKeyDown}></line>;
+    return <line x1={x1} y1={y1} x2={x2} y2={y2} onClick={handleClick} role="button" aria-label={'Delete cord from ' + fromName + ' to ' + toName} tabIndex={0} onKeyDown={handleKeyDown}></line>;
 }
 
 export default memo(Cord);

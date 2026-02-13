@@ -70,7 +70,7 @@ function LogSlider({ labelName, tooltipText, min, max, mid, onChange }: LogSlide
                 }}
                 aria-label={tooltipText + ' value'}
             ></input>
-            <span id={labelName + 'logSliderFreqTip'} className="tooltiptext">
+            <span className="tooltiptext">
                 {tooltipText}
             </span>
         </div>

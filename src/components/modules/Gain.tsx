@@ -89,7 +89,7 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
 
             <div className="cordOuter tooltip" id="firstParam" role="button" aria-label="Connect to gain param" tabIndex={0} onClick={onOutput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}>
                 <div className="cordInner" id={makeParamKey(parent) + ' inputInner'}>
-                    <span id="gainGainParamTip" className="tooltiptext">
+                    <span className="tooltiptext">
                         <span className="paramSpan">param: </span>gain
                     </span>
                 </div>

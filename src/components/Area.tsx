@@ -22,6 +22,7 @@ interface AreaProps {
     handleOutput: (info: CordToData) => void;
     inputOnly: boolean;
     alert: (msg: string) => void;
+    patchSource: string | null;
 }
 
 function Area({
@@ -34,6 +35,7 @@ function Area({
     handleOutput,
     inputOnly,
     alert,
+    patchSource,
 }: AreaProps) {
     const [audio, setAudio] = useState<AudioNode>({} as AudioNode);
 
@@ -128,7 +130,7 @@ function Area({
 
             {/*input patch cords area*/}
             <div
-                className={outputMode ? 'cordOuter hide' : 'cordOuter show interactive'}
+                className={outputMode && patchSource === myKey ? 'cordOuter show patchSource' : outputMode ? 'cordOuter hide' : 'cordOuter show interactive'}
                 id="outputOuter"
                 role="button"
                 aria-label={'Connect from ' + name}

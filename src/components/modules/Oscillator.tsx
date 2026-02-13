@@ -86,7 +86,7 @@ function Oscillator({ createAudio, parent, handleOutput }: OscillatorProps) {
                 <label id="oscSlider" className="switch tooltip">
                     <input type="checkbox" onClick={handleLFOClick} aria-label="LFO Mode"></input>
                     <span className="slider round"></span>
-                    <span id="oscLFOTip" className="tooltiptext">
+                    <span className="tooltiptext">
                         LFO Mode
                     </span>
                 </label>
@@ -101,11 +101,9 @@ function Oscillator({ createAudio, parent, handleOutput }: OscillatorProps) {
             />
             <div className="cordOuter tooltip" id="firstParam" role="button" aria-label="Connect to frequency param" tabIndex={0} onClick={onOutput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}>
                 <div className="cordInner" id={makeParamKey(parent) + ' inputInner'}>
-                    <div id="ttWrapper">
-                        <span id="oscDetuneParamTip" className="tooltiptext">
-                            <span className="paramSpan">param: </span>frequency
-                        </span>
-                    </div>
+                    <span className="tooltiptext">
+                        <span className="paramSpan">param: </span>frequency
+                    </span>
                 </div>
             </div>
             <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} step={1} setAudio={setModDepth} />
