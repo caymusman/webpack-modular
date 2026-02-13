@@ -72,12 +72,14 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
                 max="1"
                 step=".01"
                 onChange={handleGainChange}
+                aria-label="Gain"
             ></input>
             <input
                 id="gainNumInput"
                 value={num}
                 type="text"
                 onChange={handleNumChange}
+                aria-label="Gain value"
                 onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                         handleNumGainChange();

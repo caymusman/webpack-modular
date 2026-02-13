@@ -56,6 +56,24 @@ describe('Slider (via Gain module)', () => {
         const rangeInput = container.querySelector('#gainRangeInput');
         expect(rangeInput.value).toBe('0.3');
     });
+
+    test('value above max clamps to max on Enter', () => {
+        const numInput = container.querySelector('#gainNumInput');
+        fireEvent.change(numInput, { target: { value: '5' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('1');
+        const rangeInput = container.querySelector('#gainRangeInput');
+        expect(rangeInput.value).toBe('1');
+    });
+
+    test('value below min clamps to min on Enter', () => {
+        const numInput = container.querySelector('#gainNumInput');
+        fireEvent.change(numInput, { target: { value: '-1' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('0');
+        const rangeInput = container.querySelector('#gainRangeInput');
+        expect(rangeInput.value).toBe('0');
+    });
 });
 
 describe('Slider (via Filter module)', () => {
@@ -78,6 +96,20 @@ describe('Slider (via Filter module)', () => {
     test('Filter Gain slider initializes to midpoint (0)', () => {
         const numInput = container.querySelector('#filterGainNumber');
         expect(numInput.value).toBe('0');
+    });
+
+    test('value above max clamps on Enter', () => {
+        const numInput = container.querySelector('#filterGainNumber');
+        fireEvent.change(numInput, { target: { value: '100' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('40');
+    });
+
+    test('value below min clamps on Enter', () => {
+        const numInput = container.querySelector('#filterGainNumber');
+        fireEvent.change(numInput, { target: { value: '-100' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('-40');
     });
 });
 
@@ -161,6 +193,48 @@ describe('LogSlider (via Oscillator module)', () => {
     });
 });
 
+describe('LogSlider clamping and transforms (via Oscillator)', () => {
+    let container;
+
+    beforeEach(() => {
+        const result = renderWithAudioContext(<App />);
+        container = result.container;
+        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
+        fireEvent.click(oscButton);
+    });
+
+    test('frequency above max-1 clamps on Enter', () => {
+        const numInput = container.querySelector('#oscFreqfreqNumInput');
+        fireEvent.change(numInput, { target: { value: '99999' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('20000');
+    });
+
+    test('frequency below min clamps on Enter', () => {
+        const numInput = container.querySelector('#oscFreqfreqNumInput');
+        fireEvent.change(numInput, { target: { value: '5' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        expect(numInput.value).toBe('20');
+    });
+
+    test('forward transform: range midpoint maps to sqrt value', () => {
+        const rangeInput = container.querySelector('.oscFreqfreqNumRange');
+        fireEvent.change(rangeInput, { target: { value: '0.5' } });
+        const numInput = container.querySelector('#oscFreqfreqNumInput');
+        const expected = String(Number((Math.pow(20001, 0.5) - 1).toFixed(2)));
+        expect(numInput.value).toBe(expected);
+    });
+
+    test('backward transform: numeric submit updates range', () => {
+        const numInput = container.querySelector('#oscFreqfreqNumInput');
+        fireEvent.change(numInput, { target: { value: '1000' } });
+        fireEvent.keyDown(numInput, { key: 'Enter' });
+        const rangeInput = container.querySelector('.oscFreqfreqNumRange');
+        const expected = Math.log(1001) / Math.log(20000);
+        expect(parseFloat(rangeInput.value)).toBeCloseTo(expected, 4);
+    });
+});
+
 describe('Selector (via Oscillator waveform)', () => {
     let container;
 
@@ -197,6 +271,24 @@ describe('Selector (via Oscillator waveform)', () => {
 
         const display = selector.querySelector('span');
         expect(display.textContent).toBe('sawtooth');
+    });
+
+    test('Enter key selects option', () => {
+        const selector = container.querySelector('#waveSelector');
+        const options = selector.querySelectorAll('.selectorVal');
+        const sawOption = Array.from(options).find((o) => o.textContent === 'sawtooth');
+        fireEvent.keyDown(sawOption, { key: 'Enter' });
+        const display = selector.querySelector('span');
+        expect(display.textContent).toBe('sawtooth');
+    });
+
+    test('Space key selects option', () => {
+        const selector = container.querySelector('#waveSelector');
+        const options = selector.querySelectorAll('.selectorVal');
+        const triOption = Array.from(options).find((o) => o.textContent === 'triangle');
+        fireEvent.keyDown(triOption, { key: ' ' });
+        const display = selector.querySelector('span');
+        expect(display.textContent).toBe('triangle');
     });
 });
 
@@ -330,6 +422,27 @@ describe('ADSR TextInput controls', () => {
         const checkbox = container.querySelector('#ADSRCheck input[type="checkbox"]');
         expect(checkbox).toBeTruthy();
     });
+
+    test('Attack above max clamps on Enter', () => {
+        const attackInput = container.querySelector('#ADSRAttackinputLabel input');
+        fireEvent.change(attackInput, { target: { value: '10' } });
+        fireEvent.keyDown(attackInput, { key: 'Enter' });
+        expect(attackInput.value).toBe('5');
+    });
+
+    test('Attack below min clamps on Enter', () => {
+        const attackInput = container.querySelector('#ADSRAttackinputLabel input');
+        fireEvent.change(attackInput, { target: { value: '-1' } });
+        fireEvent.keyDown(attackInput, { key: 'Enter' });
+        expect(attackInput.value).toBe('0');
+    });
+
+    test('Sustain above max clamps on Enter', () => {
+        const sustainInput = container.querySelector('#ADSRSustaininputLabel input');
+        fireEvent.change(sustainInput, { target: { value: '5' } });
+        fireEvent.keyDown(sustainInput, { key: 'Enter' });
+        expect(sustainInput.value).toBe('1');
+    });
 });
 
 describe('Recorder module', () => {
@@ -423,5 +536,45 @@ describe('Dial (via Filter Q)', () => {
         const tooltip = container.querySelector('#Qdialtip');
         expect(tooltip).toBeTruthy();
         expect(tooltip.textContent).toBe('Q');
+    });
+});
+
+describe('Dial clamping and transforms (via Filter Q)', () => {
+    let container;
+
+    beforeEach(() => {
+        const result = renderWithAudioContext(<App />);
+        container = result.container;
+        const filterButton = screen.getByRole('button', { name: 'Filter' });
+        fireEvent.click(filterButton);
+    });
+
+    test('Q above max-1 clamps on Enter', () => {
+        const dialNum = container.querySelector('#dialNumInput');
+        fireEvent.change(dialNum, { target: { value: '5000' } });
+        fireEvent.keyDown(dialNum, { key: 'Enter' });
+        expect(dialNum.value).toBe('1000');
+    });
+
+    test('Q below min clamps on Enter', () => {
+        const dialNum = container.querySelector('#dialNumInput');
+        fireEvent.change(dialNum, { target: { value: '-5' } });
+        fireEvent.keyDown(dialNum, { key: 'Enter' });
+        expect(dialNum.value).toBe('0');
+    });
+
+    test('forward transform: range midpoint maps to sqrt value', () => {
+        const dialRange = container.querySelector('.dialRange');
+        fireEvent.change(dialRange, { target: { value: '0.5' } });
+        const dialNum = container.querySelector('#dialNumInput');
+        const expected = String(Number((Math.pow(1001, 0.5) - 1).toFixed(2)));
+        expect(dialNum.value).toBe(expected);
+    });
+
+    test('backward transform: numeric submit shows correct value', () => {
+        const dialNum = container.querySelector('#dialNumInput');
+        fireEvent.change(dialNum, { target: { value: '100' } });
+        fireEvent.keyDown(dialNum, { key: 'Enter' });
+        expect(dialNum.value).toBe('100');
     });
 });

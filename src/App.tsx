@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, ReactElement } from 'react';
+import { useState, useCallback, useEffect, useRef, createRef, ReactElement } from 'react';
 import Draggable from 'react-draggable';
 import Area from './components/Area';
 import Cord from './components/Cord';
@@ -18,7 +18,14 @@ export default function App() {
     const [alert, setAlert] = useState(false);
     const [pingText, setPingText] = useState('');
     const [audioIn, setAudioIn] = useState(false);
-    const nodeRef = useRef<HTMLDivElement>(null);
+    const nodeRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
+
+    const getNodeRef = useCallback((key: string) => {
+        if (!nodeRefs.current.has(key)) {
+            nodeRefs.current.set(key, createRef<HTMLDivElement>());
+        }
+        return nodeRefs.current.get(key)!;
+    }, []);
 
     const handlePatchExit = useCallback(() => {
         setPatchCords((prev) => prev.slice(0, -1));
@@ -61,6 +68,8 @@ export default function App() {
     );
 
     const handleClose = useCallback((childKey: string) => {
+        nodeRefs.current.delete(childKey);
+
         setList((prev) => {
             const newMap = new Map(prev);
             newMap.delete(childKey);
@@ -281,6 +290,7 @@ export default function App() {
                 ><i className="fa fa-times-circle" aria-hidden="true"></i></button>
 
                 {[...list].map(([key, { myKey, filling, name, inputOnly }]) => {
+                    const ref = getNodeRef(key);
                     return (
                         <Draggable
                             onDrag={() => {
@@ -289,9 +299,9 @@ export default function App() {
                             key={key}
                             handle="p"
                             bounds="parent"
-                            nodeRef={nodeRef}
+                            nodeRef={ref}
                         >
-                            <div className="dragDiv" ref={nodeRef}>
+                            <div className="dragDiv" ref={ref}>
                                 <Area
                                     key={myKey}
                                     myKey={myKey}

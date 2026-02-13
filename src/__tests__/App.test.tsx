@@ -196,3 +196,233 @@ describe('Output module', () => {
         expect(slider.value).toBe('0.8');
     });
 });
+
+describe('Patch cord connection', () => {
+    test('connecting two modules creates a visible cord', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+    });
+
+    test('patch mode exits after successful connection', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        expect(container.querySelector('#patchExit').className).toContain('hide');
+    });
+
+    test('self-patch shows alert', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Gain' }));
+
+        expect(container.querySelector('.pingBox').className).toContain('show');
+        expect(container.querySelector('#pingText').textContent).toContain(
+            'cannot plug a module into itself'
+        );
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+
+    test('duplicate patch shows alert', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        // First connection
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        // Attempt duplicate
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        expect(container.querySelector('.pingBox').className).toContain('show');
+        expect(container.querySelector('#pingText').textContent).toContain('already patched');
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+    });
+
+    test('param cross-ref shows alert', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Oscillator' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Oscillator' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to frequency param' }));
+
+        expect(container.querySelector('.pingBox').className).toContain('show');
+        expect(container.querySelector('#pingText').textContent).toContain('thats a new one');
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+
+    test('multiple valid connections', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Panner' }));
+
+        // Connect Gain→Filter
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        // Connect Gain→Panner
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Panner' }));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(2);
+    });
+});
+
+describe('Patch cord deletion', () => {
+    test('clicking a cord line removes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+
+        fireEvent.click(container.querySelector('#patchCords line'));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+
+    test('deleting a cord allows re-patching same route', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        // Connect then delete
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        fireEvent.click(container.querySelector('#patchCords line'));
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+
+        // Reconnect same route
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelector('.pingBox').className).toContain('hide');
+    });
+
+    test('closing source module removes its cords', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Panner' }));
+
+        // Connect Gain→Filter and Gain→Panner
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Panner' }));
+        expect(container.querySelectorAll('#patchCords line').length).toBe(2);
+
+        // Close Gain
+        fireEvent.click(screen.getByRole('button', { name: 'Close Gain' }));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+
+    test('closing target module removes cord to it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+
+        // Close Filter
+        fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+});
+
+describe('Cord keyboard interaction', () => {
+    test('Enter key on cord line deletes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        fireEvent.keyDown(container.querySelector('#patchCords line'), { key: 'Enter' });
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+
+    test('Space key on cord line deletes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+
+        fireEvent.keyDown(container.querySelector('#patchCords line'), { key: ' ' });
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+    });
+});
+
+describe('Cord dock keyboard interaction', () => {
+    test('Enter on output dock starts patch mode', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Connect from Gain' }), {
+            key: 'Enter',
+        });
+
+        expect(container.querySelector('#patchExit').className).toContain('show');
+    });
+
+    test('Space on output dock starts patch mode', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Connect from Gain' }), {
+            key: ' ',
+        });
+
+        expect(container.querySelector('#patchExit').className).toContain('show');
+    });
+
+    test('Enter on input dock completes connection', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Connect to Filter' }), {
+            key: 'Enter',
+        });
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+    });
+
+    test('Enter on Output module dock completes connection', () => {
+        const { container } = renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Connect to Output' }), {
+            key: 'Enter',
+        });
+
+        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+    });
+});
