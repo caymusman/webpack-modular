@@ -4,9 +4,10 @@ import { setConvolverBuffer } from '../../audio/nodeHelpers';
 import { createConvolverNode } from '../../audio/nodeFactories';
 import { useAudioContext } from '../../audio/AudioContextProvider';
 
-const shortWav = '/media/short.wav';
-const mediumWav = '/media/medium.wav';
-const longWav = '/media/long.wav';
+const base = import.meta.env.BASE_URL;
+const shortWav = `${base}media/short.wav`;
+const mediumWav = `${base}media/medium.wav`;
+const longWav = `${base}media/long.wav`;
 
 interface ReverbProps {
     createAudio: (node: AudioNode) => void;
