@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import Oscillator from './modules/Oscillator';
 import Gain from './modules/Gain';
 import Filter from './modules/Filter';
@@ -38,10 +38,16 @@ function Area({
     patchSource,
 }: AreaProps) {
     const [audio, setAudio] = useState<AudioNode>({} as AudioNode);
+    const [closing, setClosing] = useState(false);
+    const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const onClose = useCallback(() => {
-        handleClose(myKey);
-    }, [handleClose, myKey]);
+        if (closing) return;
+        setClosing(true);
+        closingTimer.current = setTimeout(() => {
+            handleClose(myKey);
+        }, 250);
+    }, [closing, handleClose, myKey]);
 
     const handleCreatePatch = useCallback(
         (event: React.MouseEvent | React.KeyboardEvent) => {
@@ -119,7 +125,7 @@ function Area({
     };
 
     return (
-        <div className="moduleDiv">
+        <div className={`moduleDiv${closing ? ' moduleDiv--closing' : ''}`}>
             <p id="modTitle">
                 <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn"><i className="fa fa-times" aria-hidden="true"></i></button>
                 {name}

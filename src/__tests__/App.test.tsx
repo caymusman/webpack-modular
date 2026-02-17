@@ -1,6 +1,14 @@
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import App from '../App';
 import { renderWithAudioContext } from './testUtils';
+
+beforeEach(() => {
+    vi.useFakeTimers();
+});
+
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 describe('App', () => {
     let app;
@@ -110,6 +118,7 @@ describe('Module deletion', () => {
         // Click the close icon (fa-times)
         const closeIcon = container.querySelector('.fa-times');
         fireEvent.click(closeIcon);
+        act(() => vi.advanceTimersByTime(300));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
     });
@@ -126,6 +135,7 @@ describe('Module deletion', () => {
         // Close the first module
         const closeIcons = container.querySelectorAll('.fa-times');
         fireEvent.click(closeIcons[0]);
+        act(() => vi.advanceTimersByTime(300));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
     });
@@ -228,8 +238,8 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Gain' }));
 
-        expect(container.querySelector('.pingBox').className).toContain('show');
-        expect(container.querySelector('#pingText').textContent).toContain(
+        expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
+        expect(container.querySelector('.alertBox__message').textContent).toContain(
             'cannot plug a module into itself'
         );
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
@@ -248,8 +258,8 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
-        expect(container.querySelector('.pingBox').className).toContain('show');
-        expect(container.querySelector('#pingText').textContent).toContain('already patched');
+        expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
+        expect(container.querySelector('.alertBox__message').textContent).toContain('already patched');
         expect(container.querySelectorAll('#patchCords line').length).toBe(1);
     });
 
@@ -260,8 +270,8 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Oscillator' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to frequency param' }));
 
-        expect(container.querySelector('.pingBox').className).toContain('show');
-        expect(container.querySelector('#pingText').textContent).toContain('thats a new one');
+        expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
+        expect(container.querySelector('.alertBox__message').textContent).toContain('thats a new one');
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
     });
 
@@ -313,7 +323,7 @@ describe('Patch cord deletion', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
         expect(container.querySelectorAll('#patchCords line').length).toBe(1);
-        expect(container.querySelector('.pingBox').className).toContain('hide');
+        expect(container.querySelector('.alertBox').className).not.toContain('alertBox--visible');
     });
 
     test('closing source module removes its cords', () => {
@@ -331,6 +341,7 @@ describe('Patch cord deletion', () => {
 
         // Close Gain
         fireEvent.click(screen.getByRole('button', { name: 'Close Gain' }));
+        act(() => vi.advanceTimersByTime(300));
 
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
     });
@@ -346,6 +357,7 @@ describe('Patch cord deletion', () => {
 
         // Close Filter
         fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+        act(() => vi.advanceTimersByTime(300));
 
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
     });

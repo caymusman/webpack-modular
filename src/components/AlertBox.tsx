@@ -6,23 +6,21 @@ interface AlertBoxProps {
 }
 
 function AlertBox({ message, onDismiss }: AlertBoxProps) {
-    const [visible, setVisible] = useState(false);
+    const visible = message !== '';
     const [displayMessage, setDisplayMessage] = useState('');
+    const [prevMessage, setPrevMessage] = useState('');
+
+    if (message !== '' && message !== prevMessage) {
+        setPrevMessage(message);
+        setDisplayMessage(message);
+    }
 
     useEffect(() => {
-        if (message !== '') {
-            setDisplayMessage(message);
-            // Trigger enter animation on next frame
-            requestAnimationFrame(() => setVisible(true));
-            const timer = setTimeout(() => {
-                setVisible(false);
-                setTimeout(onDismiss, 300);
-            }, 4000);
+        if (visible) {
+            const timer = setTimeout(onDismiss, 4000);
             return () => clearTimeout(timer);
-        } else {
-            setVisible(false);
         }
-    }, [message, onDismiss]);
+    }, [visible, onDismiss]);
 
     return (
         <div className={`alertBox ${visible ? 'alertBox--visible' : ''}`} role="alert" aria-live="assertive">
