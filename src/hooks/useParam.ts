@@ -6,11 +6,10 @@ export function useParam<T>(param: Param<T>): [T, (v: T) => void] {
         (cb) => param.subscribe(cb),
         () => param.value
     );
-    // eslint-disable-next-line react-hooks/immutability
     return [
         value,
         (v: T) => {
-            param.value = v;
+            param.value = v; // eslint-disable-line react-hooks/immutability
         },
     ];
 }
