@@ -27,10 +27,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <div className="errorBoundary">
                     <h1 className="errorBoundary__title">Something went wrong</h1>
                     <p className="errorBoundary__message">{this.state.error?.message}</p>
-                    <button
-                        className="errorBoundary__reload"
-                        onClick={() => window.location.reload()}
-                    >
+                    <button className="errorBoundary__reload" onClick={() => window.location.reload()}>
                         Reload
                     </button>
                 </div>

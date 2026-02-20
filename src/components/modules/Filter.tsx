@@ -1,45 +1,30 @@
-import { useRef, useEffect } from 'react';
 import Selector from '../ui/Selector';
 import Dial from '../ui/Dial';
 import Slider from '../ui/Slider';
 import LogSlider from '../ui/LogSlider';
-import { setNodeType, setParamValue } from '../../audio/nodeHelpers';
-import { createFilterNode } from '../../audio/nodeFactories';
-import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
+import type { FilterModule } from '../../model/modules/FilterModule';
 
 interface FilterProps {
-    createAudio: (node: AudioNode) => void;
+    module: FilterModule;
 }
 
-function Filter({ createAudio }: FilterProps) {
-    const audioContext = useAudioContext();
-    const audio = useRef(createFilterNode(audioContext));
-    useEffect(() => {
-        createAudio(audio.current);
-    }, [createAudio]);
-
-    const handleFilterType = (val: string) => {
-        setNodeType(audio.current, val);
-    };
-
-    const setGain = (val: number) => {
-        setParamValue(audio.current.gain, val, audioContext.currentTime);
-    };
-
-    const setFreq = (val: number) => {
-        setParamValue(audio.current.frequency, Number(val), audioContext.currentTime);
-    };
-
-    const handleDialChange = (val: number) => {
-        setParamValue(audio.current.Q, Number(val), audioContext.currentTime);
-    };
+function Filter({ module }: FilterProps) {
+    const [, setFilterType] = useParam(module.params.filterType);
+    const [, setFreq] = useParam(module.params.frequency);
+    const [, setQ] = useParam(module.params.q);
+    const [, setGain] = useParam(module.params.gain);
 
     const filterTypes = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass'];
     return (
         <div className="filterDiv">
             <div id="filterBoxOne">
-                <Selector id="filterSelector" values={filterTypes} handleClick={handleFilterType} />
-                <Dial min={0} max={1001} name="Q" onChange={handleDialChange} />
+                <Selector
+                    id="filterSelector"
+                    values={filterTypes}
+                    handleClick={(v: string) => setFilterType(v as typeof module.params.filterType.value)}
+                />
+                <Dial min={0} max={1001} name="Q" onChange={setQ} />
             </div>
             <Slider
                 labelName="filterGain"

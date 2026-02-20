@@ -1,29 +1,15 @@
-import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
 import Selector from '../ui/Selector';
-import { setDistortionCurve, setOversample, makeDistortionCurve } from '../../audio/nodeHelpers';
-import { createWaveShaperNode } from '../../audio/nodeFactories';
-import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
+import type { DistortionModule } from '../../model/modules/DistortionModule';
 
 interface DistortionProps {
-    createAudio: (node: AudioNode) => void;
+    module: DistortionModule;
 }
 
-function Distortion({ createAudio }: DistortionProps) {
-    const audioContext = useAudioContext();
-    const audio = useRef(createWaveShaperNode(audioContext));
-
-    useEffect(() => {
-        createAudio(audio.current);
-    }, [createAudio]);
-
-    const handleCurve = (val: number) => {
-        setDistortionCurve(audio.current, makeDistortionCurve(val));
-    };
-
-    const handleOversample = (val: string) => {
-        setOversample(audio.current, val as OverSampleType);
-    };
+function Distortion({ module }: DistortionProps) {
+    const [, setCurve] = useParam(module.params.curve);
+    const [, setOversample] = useParam(module.params.oversample);
 
     return (
         <div>
@@ -33,9 +19,13 @@ function Distortion({ createAudio }: DistortionProps) {
                 min={50}
                 max={800}
                 step={0.1}
-                setAudio={handleCurve}
+                setAudio={setCurve}
             ></Slider>
-            <Selector id="distortionSelector" values={['none', '2x', '4x']} handleClick={handleOversample} />
+            <Selector
+                id="distortionSelector"
+                values={['none', '2x', '4x']}
+                handleClick={(v: string) => setOversample(v as typeof module.params.oversample.value)}
+            />
         </div>
     );
 }

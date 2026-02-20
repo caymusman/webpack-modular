@@ -18,9 +18,7 @@ describe('AudioContextProvider', () => {
 
     test('useAudioContext throws without provider', () => {
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        expect(() => render(<TestConsumer />)).toThrow(
-            'useAudioContext must be used within an AudioContextProvider'
-        );
+        expect(() => render(<TestConsumer />)).toThrow('useAudioContext must be used within an AudioContextProvider');
         consoleSpy.mockRestore();
     });
 

@@ -67,9 +67,7 @@ function Slider({ labelName, tooltipText, min, max, step, setAudio }: SliderProp
                 }}
                 aria-label={tooltipText + ' value'}
             ></input>
-            <span className="tooltiptext">
-                {tooltipText}
-            </span>
+            <span className="tooltiptext">{tooltipText}</span>
         </div>
     );
 }

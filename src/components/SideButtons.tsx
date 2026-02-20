@@ -3,7 +3,7 @@ import MyButton from './ui/MyButton';
 
 interface SideButtonsProps {
     id: string;
-    handleClick: (id: string, type: string, inputOnly: boolean) => void;
+    handleClick: (type: string, inputOnly: boolean) => void;
     audioIn: boolean;
 }
 

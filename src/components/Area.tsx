@@ -11,6 +11,17 @@ import AudioInput from './modules/AudioInput';
 import Recorder from './modules/Recorder';
 import { getCenterPointFromEvent } from '../utils/centerPoint';
 import { CordFromData, CordToData } from '../types';
+import type { SynthModule } from '../model/SynthModule';
+import type { GainModule } from '../model/modules/GainModule';
+import type { OscillatorModule } from '../model/modules/OscillatorModule';
+import type { FilterModule } from '../model/modules/FilterModule';
+import type { PannerModule } from '../model/modules/PannerModule';
+import type { ADSRModule } from '../model/modules/ADSRModule';
+import type { DelayModule } from '../model/modules/DelayModule';
+import type { DistortionModule } from '../model/modules/DistortionModule';
+import type { ReverbModule } from '../model/modules/ReverbModule';
+import type { AudioInputModule } from '../model/modules/AudioInputModule';
+import type { RecorderModule } from '../model/modules/RecorderModule';
 
 interface AreaProps {
     myKey: string;
@@ -23,6 +34,7 @@ interface AreaProps {
     inputOnly: boolean;
     alert: (msg: string) => void;
     patchSource: string | null;
+    module: SynthModule;
 }
 
 function Area({
@@ -36,10 +48,18 @@ function Area({
     inputOnly,
     alert,
     patchSource,
+    module,
 }: AreaProps) {
-    const [audio, setAudio] = useState<AudioNode>({} as AudioNode);
     const [closing, setClosing] = useState(false);
     const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const getAudioNode = useCallback((): AudioNode => {
+        try {
+            return module.getNode();
+        } catch {
+            return {} as AudioNode;
+        }
+    }, [module]);
 
     const onClose = useCallback(() => {
         if (closing) return;
@@ -56,11 +76,11 @@ function Area({
                 addPatch({
                     fromModID: myKey,
                     fromLocation: center,
-                    audio: audio,
+                    audio: getAudioNode(),
                 });
             }
         },
-        [outputMode, addPatch, myKey, audio]
+        [outputMode, addPatch, myKey, getAudioNode]
     );
 
     const onOutput = useCallback(
@@ -69,56 +89,34 @@ function Area({
             handleOutput({
                 tomyKey: myKey,
                 toLocation: center,
-                audio: audio,
+                audio: getAudioNode(),
             });
         },
-        [handleOutput, myKey, audio]
+        [handleOutput, myKey, getAudioNode]
     );
-
-    const createAudio = useCallback((childAudio: AudioNode) => {
-        setAudio(childAudio);
-    }, []);
 
     const renderFilling = () => {
         switch (filling) {
             case 'Oscillator':
-                return (
-                    <Oscillator
-                        createAudio={createAudio}
-                        parent={myKey}
-                        handleOutput={handleOutput}
-                    />
-                );
+                return <Oscillator module={module as OscillatorModule} parent={myKey} handleOutput={handleOutput} />;
             case 'Gain':
-                return (
-                    <Gain
-                        createAudio={createAudio}
-                        parent={myKey}
-                        handleOutput={handleOutput}
-                    />
-                );
+                return <Gain module={module as GainModule} parent={myKey} handleOutput={handleOutput} />;
             case 'Filter':
-                return <Filter createAudio={createAudio} />;
+                return <Filter module={module as FilterModule} />;
             case 'Panner':
-                return <Panner createAudio={createAudio} />;
+                return <Panner module={module as PannerModule} />;
             case 'ADSR':
-                return <ADSR createAudio={createAudio} />;
+                return <ADSR module={module as ADSRModule} />;
             case 'Delay':
-                return <Delay createAudio={createAudio} />;
+                return <Delay module={module as DelayModule} />;
             case 'Distortion':
-                return <Distortion createAudio={createAudio} />;
+                return <Distortion module={module as DistortionModule} />;
             case 'Reverb':
-                return <Reverb createAudio={createAudio} />;
+                return <Reverb module={module as ReverbModule} />;
             case 'AudioInput':
-                return (
-                    <AudioInput
-                        alert={alert}
-                        handleClose={onClose}
-                        createAudio={createAudio}
-                    />
-                );
+                return <AudioInput module={module as AudioInputModule} alert={alert} handleClose={onClose} />;
             case 'Recorder':
-                return <Recorder createAudio={createAudio} />;
+                return <Recorder module={module as RecorderModule} />;
             default:
                 return <div>Hahahahaha theres nothing here!</div>;
         }
@@ -127,7 +125,9 @@ function Area({
     return (
         <div className={`moduleDiv${closing ? ' moduleDiv--closing' : ''}`}>
             <p id="modTitle">
-                <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn"><i className="fa fa-times" aria-hidden="true"></i></button>
+                <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn">
+                    <i className="fa fa-times" aria-hidden="true"></i>
+                </button>
                 {name}
             </p>
 
@@ -136,13 +136,24 @@ function Area({
 
             {/*input patch cords area*/}
             <div
-                className={outputMode && patchSource === myKey ? 'cordOuter show patchSource' : outputMode ? 'cordOuter hide' : 'cordOuter show interactive'}
+                className={
+                    outputMode && patchSource === myKey
+                        ? 'cordOuter show patchSource'
+                        : outputMode
+                          ? 'cordOuter hide'
+                          : 'cordOuter show interactive'
+                }
                 id="outputOuter"
                 role="button"
                 aria-label={'Connect from ' + name}
                 tabIndex={0}
                 onClick={handleCreatePatch}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCreatePatch(e); } }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCreatePatch(e);
+                    }
+                }}
             >
                 <div className="cordInner" id={myKey + 'outputInner'}></div>
             </div>
@@ -156,7 +167,12 @@ function Area({
                     aria-label={'Connect to ' + name}
                     tabIndex={0}
                     onClick={onOutput}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onOutput(e);
+                        }
+                    }}
                 >
                     <div className="cordInner" id={myKey + 'inputInner'}></div>
                 </div>

@@ -23,7 +23,19 @@ function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
         }
     };
 
-    return <line x1={x1} y1={y1} x2={x2} y2={y2} onClick={handleClick} role="button" aria-label={'Delete cord from ' + fromName + ' to ' + toName} tabIndex={0} onKeyDown={handleKeyDown}></line>;
+    return (
+        <line
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            onClick={handleClick}
+            role="button"
+            aria-label={'Delete cord from ' + fromName + ' to ' + toName}
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+        ></line>
+    );
 }
 
 export default memo(Cord);

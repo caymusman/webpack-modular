@@ -239,9 +239,7 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Gain' }));
 
         expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
-        expect(container.querySelector('.alertBox__message').textContent).toContain(
-            'cannot plug a module into itself'
-        );
+        expect(container.querySelector('.alertBox__message').textContent).toContain('cannot plug a module into itself');
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
     });
 
