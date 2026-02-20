@@ -1,14 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
-import { createGainNode, createMediaStreamDestination } from '../../audio/nodeFactories';
+import { createMediaStreamDestination } from '../../audio/nodeFactories';
 import { useAudioContext } from '../../audio/AudioContextProvider';
+import type { RecorderModule } from '../../model/modules/RecorderModule';
 
 interface RecorderProps {
-    createAudio: (node: AudioNode) => void;
+    module: RecorderModule;
 }
 
-function Recorder({ createAudio }: RecorderProps) {
+function Recorder({ module }: RecorderProps) {
     const audioContext = useAudioContext();
-    const audio = useRef(createGainNode(audioContext, 0));
     const destination = useRef(createMediaStreamDestination(audioContext));
     const mediaRecorder = useRef<MediaRecorder | null>(null);
     const chunks = useRef<Blob[]>([]);
@@ -17,7 +17,8 @@ function Recorder({ createAudio }: RecorderProps) {
     const [href, setHref] = useState<string | null>(null);
 
     useEffect(() => {
-        audio.current.connect(destination.current);
+        const audio = module.getNode() as GainNode;
+        audio.connect(destination.current);
         const mr = new MediaRecorder(destination.current.stream, { mimeType: 'audio/ogg' });
         (mr as MediaRecorder & { audioChannels: number }).audioChannels = 2;
         chunks.current = [];
@@ -25,18 +26,18 @@ function Recorder({ createAudio }: RecorderProps) {
             chunks.current.push(event.data);
         };
         mediaRecorder.current = mr;
-        createAudio(audio.current);
-    }, [audioContext, createAudio]);
+    }, [audioContext, module]);
 
     const handlePlay = () => {
+        const audio = module.getNode() as GainNode;
         if (playing) {
-            audio.current.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
+            audio.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
             setTimeout(() => {
                 mediaRecorder.current!.stop();
                 setPlaying(false);
             }, 100);
         } else {
-            audio.current.gain.setTargetAtTime(1, audioContext.currentTime + 0.04, 0.04);
+            audio.gain.setTargetAtTime(1, audioContext.currentTime + 0.04, 0.04);
             mediaRecorder.current!.start();
             setPlaying(true);
             setFinished(false);
@@ -44,7 +45,8 @@ function Recorder({ createAudio }: RecorderProps) {
     };
 
     const handleFinish = () => {
-        audio.current.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
+        const audio = module.getNode() as GainNode;
+        audio.gain.setTargetAtTime(0, audioContext.currentTime + 0.02, 0.02);
         setTimeout(() => {
             mediaRecorder.current!.stop();
         }, 100);

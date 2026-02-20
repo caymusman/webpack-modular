@@ -1,8 +1,9 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import Selector from '../ui/Selector';
 import { setConvolverBuffer } from '../../audio/nodeHelpers';
-import { createConvolverNode } from '../../audio/nodeFactories';
 import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
+import type { ReverbModule } from '../../model/modules/ReverbModule';
 
 const base = import.meta.env.BASE_URL;
 const shortWav = `${base}media/short.wav`;
@@ -10,30 +11,31 @@ const mediumWav = `${base}media/medium.wav`;
 const longWav = `${base}media/long.wav`;
 
 interface ReverbProps {
-    createAudio: (node: AudioNode) => void;
+    module: ReverbModule;
 }
 
-function Reverb({ createAudio }: ReverbProps) {
+function Reverb({ module }: ReverbProps) {
     const audioContext = useAudioContext();
-    const audio = useRef(createConvolverNode(audioContext));
+    const [, setImpulse] = useParam(module.params.impulse);
 
     const updateBuffer = useCallback(
         (path: string) => {
             fetch(path)
                 .then((res) => res.arrayBuffer())
                 .then((buffer) => audioContext.decodeAudioData(buffer))
-                .then((final) => setConvolverBuffer(audio.current, final))
+                .then((final) => setConvolverBuffer(module.getNode() as ConvolverNode, final))
                 .catch((err) => console.warn('Reverb: failed to load impulse response', path, err));
         },
-        [audioContext]
+        [audioContext, module]
     );
 
     useEffect(() => {
-        updateBuffer(shortWav);
-        createAudio(audio.current);
-    }, [createAudio, updateBuffer]);
+        const impulseMap: Record<string, string> = { Small: shortWav, Medium: mediumWav, Large: longWav };
+        updateBuffer(impulseMap[module.params.impulse.value as string] ?? shortWav);
+    }, [updateBuffer, module]);
 
     const handleSelector = (value: string) => {
+        setImpulse(value as typeof module.params.impulse.value);
         switch (value) {
             case 'Small':
                 updateBuffer(shortWav);

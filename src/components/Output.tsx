@@ -52,7 +52,12 @@ function Output({ handleOutput }: OutputProps) {
                 aria-label="Connect to Output"
                 tabIndex={0}
                 onClick={onOutput}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOutput(e);
+                    }
+                }}
             >
                 <div className="cordInner" id={'Output' + 'inputInner'}></div>
             </div>

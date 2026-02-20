@@ -1,27 +1,21 @@
-import { ChangeEvent, useRef, useState, useEffect } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { makeParamKey } from '../../utils/moduleId';
 import { getCenterPointFromEvent } from '../../utils/centerPoint';
-import { createGainNode } from '../../audio/nodeFactories';
-import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
 import { CordToData } from '../../types';
+import type { GainModule } from '../../model/modules/GainModule';
 
 interface GainProps {
-    createAudio: (node: AudioNode) => void;
+    module: GainModule;
     parent: string;
     handleOutput: (info: CordToData) => void;
 }
 
-function Gain({ createAudio, parent, handleOutput }: GainProps) {
-    const audioContext = useAudioContext();
-    const audio = useRef(createGainNode(audioContext, 0.5));
-    const [value, setValue] = useState<string | number>(0.5);
-    const [num, setNum] = useState<string | number>(0.5);
+function Gain({ module, parent, handleOutput }: GainProps) {
+    const [gain, setGain] = useParam(module.params.gain);
+    const [num, setNum] = useState<string | number>(gain);
     const max = 1;
     const min = 0;
-
-    useEffect(() => {
-        createAudio(audio.current);
-    }, [createAudio, audioContext]);
 
     const handleGainChange = (event: ChangeEvent<HTMLInputElement>) => {
         let gainVal: number = Number(event.target.value);
@@ -30,8 +24,7 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
         } else if (gainVal < 0) {
             gainVal = 0;
         }
-        audio.current.gain.setValueAtTime(gainVal, audioContext.currentTime);
-        setValue(gainVal);
+        setGain(gainVal);
         setNum(gainVal);
     };
 
@@ -49,7 +42,7 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
         } else if (temp < min) {
             temp = min;
         }
-        setValue(temp);
+        setGain(temp);
         setNum(temp);
     };
 
@@ -58,7 +51,7 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
         handleOutput({
             tomyKey: makeParamKey(parent),
             toLocation: center,
-            audio: audio.current.gain,
+            audio: module.getParamNode()!,
         });
     };
 
@@ -67,7 +60,7 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
             <input
                 id="gainRangeInput"
                 type="range"
-                value={value}
+                value={gain}
                 min="0"
                 max="1"
                 step=".01"
@@ -87,7 +80,20 @@ function Gain({ createAudio, parent, handleOutput }: GainProps) {
                 }}
             ></input>
 
-            <div className="cordOuter tooltip" id="firstParam" role="button" aria-label="Connect to gain param" tabIndex={0} onClick={onOutput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOutput(e); } }}>
+            <div
+                className="cordOuter tooltip"
+                id="firstParam"
+                role="button"
+                aria-label="Connect to gain param"
+                tabIndex={0}
+                onClick={onOutput}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onOutput(e);
+                    }
+                }}
+            >
                 <div className="cordInner" id={makeParamKey(parent) + ' inputInner'}>
                     <span className="tooltiptext">
                         <span className="paramSpan">param: </span>gain

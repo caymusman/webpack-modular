@@ -24,11 +24,20 @@ function Selector({ id, values, handleClick }: SelectorProps) {
 
     return (
         <div id={id} className="selectorDiv" role="listbox" aria-label={id}>
-            <span role="option" aria-selected="true">{val}</span>
+            <span role="option" aria-selected="true">
+                {val}
+            </span>
             <div id="selectorContent">
                 {values.map((el) => {
                     return (
-                        <div key={el} className="selectorVal" role="option" tabIndex={0} onClick={onClick} onKeyDown={handleKeyDown}>
+                        <div
+                            key={el}
+                            className="selectorVal"
+                            role="option"
+                            tabIndex={0}
+                            onClick={onClick}
+                            onKeyDown={handleKeyDown}
+                        >
                             {el}
                         </div>
                     );

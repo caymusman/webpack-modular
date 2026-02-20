@@ -81,6 +81,171 @@ body {
     background-color: $dark;
     filter: drop-shadow(0 0 20px $dark);
     z-index: 2;
+    display: flex;
+    align-items: center;
+
+    .presetBar {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 0 10px;
+        height: 100%;
+        margin-left: auto;
+
+        &__name {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0;
+            color: $light;
+            font-size: 11px;
+            padding: 2px 4px;
+            width: 110px;
+            transition: border-color 0.2s;
+
+            &::placeholder {
+                color: rgba(255, 255, 255, 0.3);
+            }
+
+            &:focus {
+                background: transparent;
+                color: $light;
+                outline: none;
+                border-bottom-color: rgba(255, 255, 255, 0.55);
+            }
+        }
+
+        &__btn {
+            height: auto;
+            padding: 3px 10px;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            width: auto;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: none;
+            transition:
+                background 0.15s,
+                color 0.15s,
+                border-color 0.15s;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: $light;
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+
+            &:active {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            i {
+                font-size: 8px;
+                opacity: 0.5;
+            }
+
+            &--clear {
+                background: transparent;
+                border-color: rgba(200, 50, 50, 0.35);
+                color: rgba(220, 100, 100, 0.8);
+
+                &:hover {
+                    background: rgba(200, 50, 50, 0.15);
+                    color: rgb(240, 130, 130);
+                    border-color: rgba(200, 50, 50, 0.6);
+                }
+            }
+        }
+
+        &__count {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            padding: 0 5px;
+            font-size: 9px;
+            line-height: 1.6;
+        }
+
+        &__dropdown {
+            position: relative;
+        }
+
+        &__dropdownPanel {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            background: color.adjust($dark, $lightness: -8%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+            min-width: 180px;
+            z-index: 500;
+            overflow: hidden;
+        }
+
+        &__dropdownItem {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding-left: 12px;
+            transition: background 0.1s;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.06);
+            }
+
+            span {
+                flex: 1;
+                color: rgba(255, 255, 255, 0.85);
+                font-size: 11px;
+                cursor: pointer;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                padding: 8px 6px 8px 0;
+
+                &:hover {
+                    color: $light;
+                }
+            }
+        }
+
+        &__dropdownDelete {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 0;
+            width: auto;
+            flex-shrink: 0;
+            text-transform: none;
+            transition:
+                color 0.15s,
+                background 0.15s;
+
+            &:hover {
+                color: rgba(220, 80, 80, 0.9);
+                background: rgba(200, 50, 50, 0.12);
+            }
+
+            &:active {
+                background: transparent;
+            }
+        }
+
+        &__dropdownEmpty {
+            padding: 10px 14px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            font-style: italic;
+        }
+    }
 }
 
 #sidebar {
@@ -152,7 +317,9 @@ body {
         background: color.adjust($dark, $lightness: -5%);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.35),
+            0 2px 8px rgba(0, 0, 0, 0.2);
         pointer-events: none;
         transition:
             transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),

@@ -400,7 +400,7 @@ describe('ADSR TextInput controls', () => {
 
         expect(attackInput.value).toBe('0.2');
         expect(decayInput.value).toBe('0.2');
-        expect(sustainInput.value).toBe('0.5');
+        expect(sustainInput.value).toBe('0.6');
         expect(releaseInput.value).toBe('0.3');
     });
 

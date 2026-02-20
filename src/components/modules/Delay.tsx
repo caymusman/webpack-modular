@@ -1,23 +1,13 @@
-import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
-import { createDelayNode } from '../../audio/nodeFactories';
-import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
+import type { DelayModule } from '../../model/modules/DelayModule';
 
 interface DelayProps {
-    createAudio: (node: AudioNode) => void;
+    module: DelayModule;
 }
 
-function Delay({ createAudio }: DelayProps) {
-    const audioContext = useAudioContext();
-    const audio = useRef(createDelayNode(audioContext, 5.0));
-
-    useEffect(() => {
-        createAudio(audio.current);
-    }, [createAudio]);
-
-    const handleDelayTime = (val: number) => {
-        audio.current.delayTime.setValueAtTime(val, audioContext.currentTime);
-    };
+function Delay({ module }: DelayProps) {
+    const [, setDelayTime] = useParam(module.params.delayTime);
 
     return (
         <div id="delayDiv">
@@ -27,7 +17,7 @@ function Delay({ createAudio }: DelayProps) {
                 min={0}
                 max={5}
                 step={0.01}
-                setAudio={handleDelayTime}
+                setAudio={setDelayTime}
             ></Slider>
         </div>
     );

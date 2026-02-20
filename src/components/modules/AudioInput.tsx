@@ -1,21 +1,22 @@
 import { useRef, useEffect } from 'react';
 import Slider from '../ui/Slider';
-import { createGainNode } from '../../audio/nodeFactories';
 import { useAudioContext } from '../../audio/AudioContextProvider';
+import { useParam } from '../../hooks/useParam';
+import type { AudioInputModule } from '../../model/modules/AudioInputModule';
 
 interface AudioInputProps {
+    module: AudioInputModule;
     alert: (msg: string) => void;
     handleClose: () => void;
-    createAudio: (node: AudioNode) => void;
 }
 
-function AudioInput({ alert, handleClose, createAudio }: AudioInputProps) {
+function AudioInput({ module, alert, handleClose }: AudioInputProps) {
     const audioContext = useAudioContext();
-    const outputGain = useRef(createGainNode(audioContext, 0.5));
     const mediaStream = useRef<MediaStream | null>(null);
+    const [, setGain] = useParam(module.params.gain);
 
     useEffect(() => {
-        const gainNode = outputGain.current;
+        const gainNode = module.getNode() as GainNode;
         if (navigator.mediaDevices) {
             navigator.mediaDevices
                 .getUserMedia({ audio: true })
@@ -23,7 +24,6 @@ function AudioInput({ alert, handleClose, createAudio }: AudioInputProps) {
                     mediaStream.current = stream;
                     const audio = audioContext.createMediaStreamSource(stream);
                     audio.connect(gainNode);
-                    createAudio(gainNode);
                 })
                 .catch((err) => {
                     console.warn('When setting up media devices, I caught: \n' + err);
@@ -42,15 +42,10 @@ function AudioInput({ alert, handleClose, createAudio }: AudioInputProps) {
             }
             gainNode.disconnect();
         };
-    }, [audioContext, createAudio, handleClose, alert]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [audioContext, handleClose, alert]);
 
-    const setGain = (val: number) => {
-        outputGain.current.gain.setValueAtTime(val, audioContext.currentTime);
-    };
-
-    return (
-        <Slider labelName="audioInGain" tooltipText="Gain" min={0} max={1} step={0.01} setAudio={setGain} />
-    );
+    return <Slider labelName="audioInGain" tooltipText="Gain" min={0} max={1} step={0.01} setAudio={setGain} />;
 }
 
 export default AudioInput;
