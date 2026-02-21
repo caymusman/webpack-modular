@@ -186,11 +186,9 @@ describe('CC MIDI message while armed', () => {
     });
 
     test('created mapping has correct kind, channel, cc, moduleKey, paramKey', async () => {
-        let captured: MIDIMapping[] = [];
         function Inspector() {
             const { serializeMappings } = useMIDILearn();
-            captured = serializeMappings();
-            return null;
+            return <span data-testid="inspector">{JSON.stringify(serializeMappings())}</span>;
         }
         render(
             <MIDILearnProvider>
@@ -205,15 +203,18 @@ describe('CC MIDI message while armed', () => {
         // channel 2, CC 74
         await act(async () => { fireMIDI([0xb2, 74, 100]); });
 
-        await waitFor(() => { expect(captured.length).toBe(1); });
-        const m = captured[0];
-        expect(m.kind).toBe('cc');
-        if (m.kind === 'cc') {
-            expect(m.channel).toBe(2);
-            expect(m.cc).toBe(74);
-            expect(m.moduleKey).toBe('Oscillator 0');
-            expect(m.paramKey).toBe('frequency');
-        }
+        await waitFor(() => {
+            const mappings = JSON.parse(screen.getByTestId('inspector').textContent!) as MIDIMapping[];
+            expect(mappings).toHaveLength(1);
+            const m = mappings[0];
+            expect(m.kind).toBe('cc');
+            if (m.kind === 'cc') {
+                expect(m.channel).toBe(2);
+                expect(m.cc).toBe(74);
+                expect(m.moduleKey).toBe('Oscillator 0');
+                expect(m.paramKey).toBe('frequency');
+            }
+        });
     });
 });
 
@@ -235,11 +236,9 @@ describe('Note-on MIDI message while armed (non-gate)', () => {
     });
 
     test('note mapping has kind=note and correct fields', async () => {
-        let captured: MIDIMapping[] = [];
         function Inspector() {
             const { serializeMappings } = useMIDILearn();
-            captured = serializeMappings();
-            return null;
+            return <span data-testid="inspector">{JSON.stringify(serializeMappings())}</span>;
         }
         render(
             <MIDILearnProvider>
@@ -253,14 +252,17 @@ describe('Note-on MIDI message while armed (non-gate)', () => {
 
         await act(async () => { fireMIDI([0x91, 48, 80]); }); // channel 1
 
-        await waitFor(() => { expect(captured.length).toBe(1); });
-        const m = captured[0];
-        expect(m.kind).toBe('note');
-        if (m.kind === 'note') {
-            expect(m.channel).toBe(1);
-            expect(m.moduleKey).toBe('Oscillator 0');
-            expect(m.paramKey).toBe('frequency');
-        }
+        await waitFor(() => {
+            const mappings = JSON.parse(screen.getByTestId('inspector').textContent!) as MIDIMapping[];
+            expect(mappings).toHaveLength(1);
+            const m = mappings[0];
+            expect(m.kind).toBe('note');
+            if (m.kind === 'note') {
+                expect(m.channel).toBe(1);
+                expect(m.moduleKey).toBe('Oscillator 0');
+                expect(m.paramKey).toBe('frequency');
+            }
+        });
     });
 
     test('note-off (velocity 0) does NOT create a mapping', async () => {
@@ -293,11 +295,9 @@ describe('Note-on MIDI message while armed as gate', () => {
     });
 
     test('gate mapping has kind=gate and correct fields', async () => {
-        let captured: MIDIMapping[] = [];
         function Inspector() {
             const { serializeMappings } = useMIDILearn();
-            captured = serializeMappings();
-            return null;
+            return <span data-testid="inspector">{JSON.stringify(serializeMappings())}</span>;
         }
         render(
             <MIDILearnProvider>
@@ -311,13 +311,16 @@ describe('Note-on MIDI message while armed as gate', () => {
 
         await act(async () => { fireMIDI([0x92, 60, 100]); }); // channel 2
 
-        await waitFor(() => { expect(captured.length).toBe(1); });
-        const m = captured[0];
-        expect(m.kind).toBe('gate');
-        if (m.kind === 'gate') {
-            expect(m.channel).toBe(2);
-            expect(m.moduleKey).toBe('ADSR 0');
-        }
+        await waitFor(() => {
+            const mappings = JSON.parse(screen.getByTestId('inspector').textContent!) as MIDIMapping[];
+            expect(mappings).toHaveLength(1);
+            const m = mappings[0];
+            expect(m.kind).toBe('gate');
+            if (m.kind === 'gate') {
+                expect(m.channel).toBe(2);
+                expect(m.moduleKey).toBe('ADSR 0');
+            }
+        });
     });
 });
 
@@ -416,16 +419,22 @@ describe('loadMappings', () => {
             { kind: 'cc', channel: 1, cc: 11, moduleKey: 'Filter 0', paramKey: 'frequency', min: 200, max: 8000 },
             { kind: 'note', channel: 0, moduleKey: 'Oscillator 0', paramKey: 'frequency' },
         ];
-        let serialized: MIDIMapping[] = [];
         function Spy() {
             const { loadMappings, serializeMappings } = useMIDILearn();
-            serialized = serializeMappings();
-            return <button onClick={() => loadMappings(mappings)}>load</button>;
+            return (
+                <>
+                    <span data-testid="inspector">{JSON.stringify(serializeMappings())}</span>
+                    <button onClick={() => loadMappings(mappings)}>load</button>
+                </>
+            );
         }
         render(<MIDILearnProvider><Spy /></MIDILearnProvider>);
         fireEvent.click(screen.getByRole('button', { name: 'load' }));
-        await waitFor(() => expect(serialized.length).toBe(2));
-        expect(serialized).toEqual(expect.arrayContaining(mappings));
+        await waitFor(() => {
+            const serialized = JSON.parse(screen.getByTestId('inspector').textContent!) as MIDIMapping[];
+            expect(serialized).toHaveLength(2);
+            expect(serialized).toEqual(expect.arrayContaining(mappings));
+        });
     });
 });
 
