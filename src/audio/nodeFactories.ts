@@ -33,3 +33,13 @@ export function createConvolverNode(ctx: AudioContext): ConvolverNode {
 export function createMediaStreamDestination(ctx: AudioContext): MediaStreamAudioDestinationNode {
     return ctx.createMediaStreamDestination();
 }
+
+export function createCompressorNode(ctx: AudioContext): DynamicsCompressorNode {
+    return ctx.createDynamicsCompressor();
+}
+
+export function createConstantSourceNode(ctx: AudioContext, offset = 0): ConstantSourceNode {
+    const source = ctx.createConstantSource();
+    source.offset.setValueAtTime(offset, ctx.currentTime);
+    return source;
+}

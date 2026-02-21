@@ -1,25 +1,17 @@
 import { memo } from 'react';
-import MyButton from './ui/MyButton';
 
 interface SideButtonsProps {
     id: string;
-    handleClick: (type: string, inputOnly: boolean) => void;
-    audioIn: boolean;
+    onOpenPalette: () => void;
 }
 
-function SideButtons({ id, handleClick, audioIn }: SideButtonsProps) {
+function SideButtons({ id, onOpenPalette }: SideButtonsProps) {
     return (
         <div id={id}>
-            <MyButton name="Oscillator" handleClick={handleClick} inputOnly={true} />
-            <MyButton name="Gain" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="Filter" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="Panner" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="ADSR" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="Delay" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="Distortion" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="Reverb" handleClick={handleClick} inputOnly={false} />
-            <MyButton name="AudioInput" handleClick={handleClick} inputOnly={true} audioIn={audioIn} />
-            <MyButton name="Recorder" handleClick={handleClick} inputOnly={false} />
+            <button className="addBtn addBtn--open" onClick={onOpenPalette} aria-label="Add module (N)">
+                <i className="fa fa-plus" aria-hidden="true"></i>
+                <span className="addBtn__hint">N</span>
+            </button>
         </div>
     );
 }

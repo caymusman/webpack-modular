@@ -64,8 +64,27 @@ const mockMediaStreamDestination = () => ({
     stream: { getTracks: () => [] },
 });
 
+const mockDynamicsCompressorNode = () => ({
+    ...mockAudioNode(),
+    threshold: mockAudioParam(),
+    knee: mockAudioParam(),
+    ratio: mockAudioParam(),
+    attack: mockAudioParam(),
+    release: mockAudioParam(),
+    reduction: 0,
+});
+
+const mockBufferSourceNode = () => ({
+    ...mockAudioNode(),
+    buffer: null,
+    loop: false,
+    start: vi.fn(),
+    stop: vi.fn(),
+});
+
 class MockAudioContext {
     currentTime = 0;
+    sampleRate = 44100;
     destination = mockAudioNode();
 
     createGain() {
@@ -94,6 +113,29 @@ class MockAudioContext {
     }
     createMediaStreamDestination() {
         return mockMediaStreamDestination();
+    }
+    createDynamicsCompressor() {
+        return mockDynamicsCompressorNode();
+    }
+    createBuffer(_channels: number, length: number, _sampleRate: number) {
+        return {
+            length,
+            numberOfChannels: _channels,
+            sampleRate: _sampleRate,
+            duration: length / _sampleRate,
+            getChannelData: () => new Float32Array(length),
+        };
+    }
+    createBufferSource() {
+        return mockBufferSourceNode();
+    }
+    createConstantSource() {
+        return {
+            ...mockAudioNode(),
+            offset: mockAudioParam(),
+            start: vi.fn(),
+            stop: vi.fn(),
+        };
     }
     decodeAudioData() {
         return Promise.resolve({});

@@ -4,7 +4,7 @@ import AlertBox from './components/AlertBox';
 import Area from './components/Area';
 import Cord from './components/Cord';
 import Output from './components/Output';
-import SideButtons from './components/SideButtons';
+import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
 import { getCenterPoint } from './utils/centerPoint';
@@ -25,8 +25,10 @@ export default function App() {
     const [nodeRefs] = useState(() => new Map<string, React.RefObject<HTMLDivElement>>());
     const [moduleCounts, setModuleCounts] = useState<Record<string, number>>({});
     const [pendingConnections, setPendingConnections] = useState<SerializedConnection[] | null>(null);
+    const [paletteOpen, setPaletteOpen] = useState(false);
 
     const pendingCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const pendingFocusRef = useRef<string | null>(null);
 
     const getNodeRef = useCallback(
         (key: string) => {
@@ -69,6 +71,7 @@ export default function App() {
             const mod = createModule(type);
             mod.init(audioContext);
 
+            pendingFocusRef.current = childKey;
             setCordCombos((prev) => ({ ...prev, [childKey]: [] }));
             setList((prev) => {
                 const newMap = new Map(prev);
@@ -200,7 +203,15 @@ export default function App() {
     }, []);
 
     const handleDrag = useCallback(
-        (modID: string) => {
+        (modID: string, _e: DraggableEvent, data: DraggableData) => {
+            setList((prev) => {
+                const newMap = new Map(prev);
+                const existing = newMap.get(modID);
+                if (existing) {
+                    newMap.set(modID, { ...existing, position: { x: data.x, y: data.y } });
+                }
+                return newMap;
+            });
             const newCords = [...patchCords];
             newCords.forEach((el) => {
                 if (el.fromData.fromModID === modID) {
@@ -213,7 +224,6 @@ export default function App() {
                     );
                 }
             });
-
             setPatchCords(newCords);
         },
         [patchCords]
@@ -243,6 +253,24 @@ export default function App() {
         });
     }, []);
 
+    const handleNudge = useCallback(
+        (modID: string, dx: number, dy: number) => {
+            setList((prev) => {
+                const newMap = new Map(prev);
+                const existing = newMap.get(modID);
+                if (existing) {
+                    newMap.set(modID, {
+                        ...existing,
+                        position: { x: existing.position.x + dx, y: existing.position.y + dy },
+                    });
+                }
+                return newMap;
+            });
+            requestAnimationFrame(handleResize);
+        },
+        [handleResize]
+    );
+
     useEffect(() => {
         let rafId: number | null = null;
         const throttledResize = () => {
@@ -258,6 +286,73 @@ export default function App() {
             if (rafId) cancelAnimationFrame(rafId);
         };
     }, [handleResize]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as Element;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+            if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                setPaletteOpen((prev) => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Focus newly added module's title bar after it renders
+    useEffect(() => {
+        const key = pendingFocusRef.current;
+        if (!key) return;
+        pendingFocusRef.current = null;
+        const nodeRef = nodeRefs.get(key);
+        if (!nodeRef?.current) return;
+        const handle = nodeRef.current.querySelector<HTMLElement>('[data-module-handle]');
+        handle?.focus();
+    }, [list, nodeRefs]);
+
+    // Escape cancels patch mode from anywhere
+    useEffect(() => {
+        if (!outputMode) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                handlePatchExit();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [outputMode, handlePatchExit]);
+
+    // In patch mode, Tab cycles only through valid input docks
+    useEffect(() => {
+        if (!outputMode) return;
+        const handleTab = (e: KeyboardEvent) => {
+            if (e.key !== 'Tab') return;
+            e.preventDefault();
+
+            // Exclude the source module's own input dock to prevent self-patch tabbing
+            const sourceDock = document.querySelector('.cordOuter.patchSource');
+            const sourceInputDock = sourceDock?.closest('.moduleDiv')?.querySelector('[id="inputOuter"]');
+
+            const docks = Array.from(
+                document.querySelectorAll<HTMLElement>('[aria-label^="Connect to "]')
+            ).filter((el) => el !== sourceInputDock);
+
+            if (docks.length === 0) return;
+
+            const currentIdx = docks.indexOf(document.activeElement as HTMLElement);
+            let nextIdx: number;
+            if (e.shiftKey) {
+                nextIdx = currentIdx <= 0 ? docks.length - 1 : currentIdx - 1;
+            } else {
+                nextIdx = currentIdx < 0 || currentIdx >= docks.length - 1 ? 0 : currentIdx + 1;
+            }
+            docks[nextIdx].focus();
+        };
+        window.addEventListener('keydown', handleTab, true);
+        return () => window.removeEventListener('keydown', handleTab, true);
+    }, [outputMode]);
 
     // Process pending connections after preset load
     useEffect(() => {
@@ -504,11 +599,27 @@ export default function App() {
         <div id="mainDiv">
             <div id="logo"></div>
             <div id="header">
+                <div id="addModuleWrapper">
+                    <button
+                        className="presetBar__btn presetBar__btn--add"
+                        onClick={() => setPaletteOpen((p) => !p)}
+                        aria-label="Add module (N)"
+                        title="Add module (N)"
+                    >
+                        <i className="fa fa-plus" aria-hidden="true" />
+                        <span className="presetBar__shortcut" aria-hidden="true">N</span>
+                    </button>
+                    {paletteOpen && (
+                        <ModulePalette
+                            onAdd={(type, inputOnly) => { handleClick(type, inputOnly); }}
+                            onClose={() => setPaletteOpen(false)}
+                            audioIn={audioIn}
+                        />
+                    )}
+                </div>
                 <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} />
             </div>
-            <div id="sidebar">
-                <SideButtons id="sideButtons" handleClick={handleClick} audioIn={audioIn} />
-            </div>
+            <div id="sidebar"></div>
             <div id="playSpace">
                 <svg id="patchCords" aria-label="Patch cord connections">
                     {cords}
@@ -527,15 +638,13 @@ export default function App() {
                     const ref = getNodeRef(key);
                     return (
                         <Draggable
-                            onDrag={() => {
-                                handleDrag(key);
-                            }}
+                            onDrag={(e, data) => handleDrag(key, e, data)}
                             onStop={(e, data) => handleDragStop(key, e, data)}
                             key={key}
                             handle="p"
                             bounds="parent"
                             nodeRef={ref}
-                            defaultPosition={position}
+                            position={position}
                         >
                             <div className="dragDiv" ref={ref}>
                                 <Area
@@ -551,6 +660,7 @@ export default function App() {
                                     alert={myAlert}
                                     patchSource={patchSource}
                                     module={module}
+                                    handleNudge={handleNudge}
                                 />
                             </div>
                         </Draggable>

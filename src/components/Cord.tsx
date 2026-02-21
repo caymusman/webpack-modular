@@ -17,7 +17,7 @@ function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Delete' || e.key === 'Backspace') {
             e.preventDefault();
             handleClick();
         }
