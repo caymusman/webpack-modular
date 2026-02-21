@@ -431,3 +431,51 @@ describe('SequencerModule', () => {
         expect(m.activeSteps[9]).toBe(true);
     });
 });
+
+describe('ADSRModule triggerAttack / triggerRelease', () => {
+    function makeInitedADSR() {
+        const m = new ADSRModule();
+        m.init(new AudioContext());
+        return m;
+    }
+
+    test('triggerAttack calls cancelScheduledValues on gain', () => {
+        const m = makeInitedADSR();
+        const gain = (m.getNode() as GainNode).gain;
+        m.triggerAttack();
+        expect(gain.cancelScheduledValues).toHaveBeenCalled();
+    });
+
+    test('triggerAttack schedules attack and sustain setTargetAtTime calls', () => {
+        const m = makeInitedADSR();
+        const gain = (m.getNode() as GainNode).gain;
+        m.params.attack.value = 0.1;
+        m.params.sustain.value = 0.7;
+        m.triggerAttack();
+        // Should call setTargetAtTime twice: once for attack ramp, once for sustain
+        expect(gain.setTargetAtTime).toHaveBeenCalledTimes(2);
+        const [firstCall, secondCall] = (gain.setTargetAtTime as ReturnType<typeof vi.fn>).mock.calls;
+        expect(firstCall[0]).toBeCloseTo(0.9); // peak level
+        expect(secondCall[0]).toBeCloseTo(0.7); // sustain level
+    });
+
+    test('triggerRelease schedules a decay to near-zero', () => {
+        const m = makeInitedADSR();
+        const gain = (m.getNode() as GainNode).gain;
+        m.params.release.value = 0.5;
+        m.triggerRelease();
+        expect(gain.setTargetAtTime).toHaveBeenCalledTimes(1);
+        const [level] = (gain.setTargetAtTime as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(level).toBeCloseTo(0.001);
+    });
+
+    test('triggerAttack before init does not throw', () => {
+        const m = new ADSRModule();
+        expect(() => m.triggerAttack()).not.toThrow();
+    });
+
+    test('triggerRelease before init does not throw', () => {
+        const m = new ADSRModule();
+        expect(() => m.triggerRelease()).not.toThrow();
+    });
+});

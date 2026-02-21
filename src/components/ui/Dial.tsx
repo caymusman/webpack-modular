@@ -1,16 +1,22 @@
 import { ChangeEvent, useState } from 'react';
+import { useMIDILearn } from '../../midi/MIDILearnContext';
 
 interface DialProps {
     name: string;
     min: number;
     max: number;
     onChange: (val: number) => void;
+    midiLearnId?: string;
 }
 
-function Dial({ name, min, max, onChange }: DialProps) {
+function Dial({ name, min, max, onChange, midiLearnId }: DialProps) {
     const [value, setValue] = useState<string | number>(0);
     const [num, setNum] = useState<string | number>(0);
     const [rotPercent, setRotPercent] = useState(0);
+    const { learnMode, armedControl, armControl, isMapped } = useMIDILearn();
+
+    const isArmed = learnMode && armedControl?.midiLearnId === midiLearnId;
+    const isMappedControl = midiLearnId ? isMapped(midiLearnId) : false;
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setValue(event.target.value);
@@ -38,13 +44,35 @@ function Dial({ name, min, max, onChange }: DialProps) {
         setRotPercent((Math.log(temp) / Math.log(max)) * 180);
     };
 
+    const handleArm = () => {
+        if (learnMode && midiLearnId) {
+            armControl(midiLearnId);
+        }
+    };
+
     const rotStyle = {
         background: `conic-gradient(from ${rotPercent / Number.POSITIVE_INFINITY - 90}deg, #fff, #555)`,
         transform: `rotate(${rotPercent}deg)`,
     };
 
+    const extraClass = isArmed ? ' midi-armed' : isMappedControl ? ' midi-mapped' : '';
+    const learnProps = learnMode && midiLearnId
+        ? {
+              tabIndex: 0,
+              role: 'button' as const,
+              'aria-label': `Arm ${name} for MIDI learn`,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleArm();
+                  }
+              },
+          }
+        : {};
+
     return (
-        <div className="dialWhole">
+        <div className={'dialWhole' + extraClass} onClick={handleArm} {...learnProps}>
+            {isMappedControl && !learnMode && <span className="midi-badge">M</span>}
             <div id="dialKnob" className="tooltip">
                 <span className="tooltiptext">{name}</span>
                 <input

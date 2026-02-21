@@ -21,4 +21,24 @@ export class ADSRModule extends SynthModule {
     createNode(ctx: AudioContext): AudioNode {
         return createGainNode(ctx, 0);
     }
+
+    triggerAttack(): void {
+        if (!this.ctx || !this.node) return;
+        const node = this.node as GainNode;
+        const current = this.ctx.currentTime;
+        const attack = this.params.attack.value as number;
+        const decay = this.params.decay.value as number;
+        const sustain = this.params.sustain.value as number;
+        node.gain.cancelScheduledValues(current);
+        node.gain.setTargetAtTime(0.9, current + attack, attack);
+        node.gain.setTargetAtTime(sustain, current + attack + decay, decay);
+    }
+
+    triggerRelease(): void {
+        if (!this.ctx || !this.node) return;
+        const node = this.node as GainNode;
+        const current = this.ctx.currentTime;
+        const release = this.params.release.value as number;
+        node.gain.setTargetAtTime(0.001, current + release, release);
+    }
 }
