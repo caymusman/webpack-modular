@@ -34,6 +34,12 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+/** Opens the palette and clicks the named module to add it. */
+function addModule(name: string) {
+    fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+    fireEvent.click(screen.getByRole('option', { name }));
+}
+
 describe('PresetBar', () => {
     test('renders preset controls in header', () => {
         renderWithAudioContext(<App />);
@@ -49,7 +55,7 @@ describe('PresetBar', () => {
         renderWithAudioContext(<App />);
 
         // Create a module
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         // Type a preset name and save
         const nameInput = screen.getByLabelText('Preset name');
@@ -69,16 +75,17 @@ describe('PresetBar', () => {
         const { container } = renderWithAudioContext(<App />);
 
         // Create modules and a cord
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
         expect(container.querySelectorAll('#patchCords line').length).toBe(1);
 
-        // Clear
+        // Clear — click trigger then confirm
         fireEvent.click(screen.getByLabelText('Clear all'));
+        fireEvent.click(screen.getByLabelText('Confirm clear'));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
         expect(container.querySelectorAll('#patchCords line').length).toBe(0);
@@ -88,13 +95,13 @@ describe('PresetBar', () => {
         const { container } = renderWithAudioContext(<App />);
 
         // Create and save
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
         const nameInput = screen.getByLabelText('Preset name');
         fireEvent.change(nameInput, { target: { value: 'ID Test' } });
         fireEvent.click(screen.getByLabelText('Save preset'));
 
         // Create another module of same type
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         // Should have 2 distinct modules
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
@@ -102,7 +109,7 @@ describe('PresetBar', () => {
 
     test('save with empty name does nothing', () => {
         renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         // Try to save with empty name
         fireEvent.click(screen.getByLabelText('Save preset'));
@@ -113,7 +120,7 @@ describe('PresetBar', () => {
 
     test('save clears the name input', () => {
         renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         const nameInput = screen.getByLabelText('Preset name') as HTMLInputElement;
         fireEvent.change(nameInput, { target: { value: 'My Preset' } });
@@ -124,7 +131,7 @@ describe('PresetBar', () => {
 
     test('Enter key in name input triggers save', () => {
         renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         const nameInput = screen.getByLabelText('Preset name');
         fireEvent.change(nameInput, { target: { value: 'Enter Test' } });
@@ -149,7 +156,7 @@ describe('PresetBar', () => {
         renderWithAudioContext(<App />);
         fireEvent.click(screen.getByLabelText('Load preset'));
 
-        expect(screen.getByRole('button', { name: 'Load My Saved' })).toBeTruthy();
+        expect(screen.getByRole('option', { name: 'Load My Saved' })).toBeTruthy();
     });
 
     test('selecting a preset from load dropdown creates modules', () => {
@@ -173,7 +180,7 @@ describe('PresetBar', () => {
         const { container } = renderWithAudioContext(<App />);
 
         fireEvent.click(screen.getByLabelText('Load preset'));
-        fireEvent.click(screen.getByRole('button', { name: 'Load Load Test' }));
+        fireEvent.click(screen.getByRole('option', { name: 'Load Load Test' }));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
     });
@@ -191,13 +198,13 @@ describe('PresetBar', () => {
         const { container } = renderWithAudioContext(<App />);
 
         // Create some modules first
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
 
         // Load preset (should replace)
         fireEvent.click(screen.getByLabelText('Load preset'));
-        fireEvent.click(screen.getByRole('button', { name: 'Load Replace' }));
+        fireEvent.click(screen.getByRole('option', { name: 'Load Replace' }));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
     });
@@ -216,12 +223,12 @@ describe('PresetBar', () => {
 
         // Load preset
         fireEvent.click(screen.getByLabelText('Load preset'));
-        fireEvent.click(screen.getByRole('button', { name: 'Load ID Collision' }));
+        fireEvent.click(screen.getByRole('option', { name: 'Load ID Collision' }));
 
-        // Create another Gain module
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        // Create another Gain module via palette
+        addModule('Gain');
 
-        // Should have 2 modules (Gain 0 from preset + Gain 1 from button)
+        // Should have 2 modules (Gain 0 from preset + Gain 1 from palette)
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
     });
 
