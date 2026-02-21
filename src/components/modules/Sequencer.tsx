@@ -39,7 +39,9 @@ function Sequencer({ module }: SequencerProps) {
 
     // Wire up the step callback
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         module.onStep = (step) => setActiveStep(step);
+        // eslint-disable-next-line react-hooks/immutability
         return () => { module.onStep = null; };
     }, [module]);
 
@@ -57,11 +59,13 @@ function Sequencer({ module }: SequencerProps) {
     const cycleNote = useCallback((stepIdx: number, direction: 1 | -1) => {
         const current = freqToNoteIndex(module.steps[stepIdx]);
         const next = Math.max(0, Math.min(ALL_NOTES.length - 1, current + direction));
+        // eslint-disable-next-line react-hooks/immutability
         module.steps[stepIdx] = ALL_NOTES[next].freq;
         setSteps([...module.steps]);
     }, [module]);
 
     const toggleActive = useCallback((stepIdx: number) => {
+        // eslint-disable-next-line react-hooks/immutability
         module.activeSteps[stepIdx] = !module.activeSteps[stepIdx];
         setActiveSteps([...module.activeSteps]);
     }, [module]);

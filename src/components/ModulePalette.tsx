@@ -16,10 +16,6 @@ export default function ModulePalette({ onAdd, onClose, audioIn }: ModulePalette
     const filtered = MODULE_LIST.filter((m) => m.type.toLowerCase().includes(query.toLowerCase()));
 
     useEffect(() => {
-        setActiveIndex(0);
-    }, [query]);
-
-    useEffect(() => {
         inputRef.current?.focus();
     }, []);
 
@@ -86,7 +82,7 @@ export default function ModulePalette({ onAdd, onClose, audioIn }: ModulePalette
                 type="text"
                 placeholder="Search modules..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
                 onKeyDown={handleKeyDown}
                 aria-label="Search modules"
                 aria-autocomplete="list"

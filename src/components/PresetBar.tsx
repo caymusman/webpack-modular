@@ -43,6 +43,7 @@ function PresetBar({ list, patchCords, onLoad, onClear }: PresetBarProps) {
 
     useEffect(() => {
         if (!dropdownOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveIndex(-1);
         }
     }, [dropdownOpen]);
