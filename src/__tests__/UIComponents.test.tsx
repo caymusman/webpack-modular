@@ -5,15 +5,19 @@ import { renderWithAudioContext } from './testUtils';
 // The UI components (Slider, LogSlider, Dial, etc.) are not exported individually,
 // so we test them through their parent modules rendered via App.
 
+/** Opens the palette and clicks the named module to add it. */
+function addModule(name: string) {
+    fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+    fireEvent.click(screen.getByRole('option', { name }));
+}
+
 describe('Slider (via Gain module)', () => {
     let container;
 
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        // Create a Gain module which uses a plain Slider
-        const gainButton = screen.getByRole('button', { name: 'Gain' });
-        fireEvent.click(gainButton);
+        addModule('Gain');
     });
 
     test('renders range and numeric inputs', () => {
@@ -82,8 +86,7 @@ describe('Slider (via Filter module)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const filterButton = screen.getByRole('button', { name: 'Filter' });
-        fireEvent.click(filterButton);
+        addModule('Filter');
     });
 
     test('Filter Gain slider renders with correct range', () => {
@@ -119,8 +122,7 @@ describe('Slider (via Delay module)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const delayButton = screen.getByRole('button', { name: 'Delay' });
-        fireEvent.click(delayButton);
+        addModule('Delay');
     });
 
     test('Delay Time slider has correct range', () => {
@@ -142,8 +144,7 @@ describe('Slider (via Panner module)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const pannerButton = screen.getByRole('button', { name: 'Panner' });
-        fireEvent.click(pannerButton);
+        addModule('Panner');
     });
 
     test('Pan slider has correct range', () => {
@@ -165,8 +166,7 @@ describe('LogSlider (via Oscillator module)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
     });
 
     test('renders frequency range and number input', () => {
@@ -199,8 +199,7 @@ describe('LogSlider clamping and transforms (via Oscillator)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
     });
 
     test('frequency above max-1 clamps on Enter', () => {
@@ -241,8 +240,7 @@ describe('Selector (via Oscillator waveform)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
     });
 
     test('renders with default value', () => {
@@ -298,8 +296,7 @@ describe('Selector (via Filter type)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const filterButton = screen.getByRole('button', { name: 'Filter' });
-        fireEvent.click(filterButton);
+        addModule('Filter');
     });
 
     test('defaults to lowpass', () => {
@@ -321,8 +318,7 @@ describe('Selector (via Reverb)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const reverbButton = screen.getByRole('button', { name: 'Reverb' });
-        fireEvent.click(reverbButton);
+        addModule('Reverb');
     });
 
     test('defaults to Small', () => {
@@ -345,8 +341,7 @@ describe('Oscillator LFO toggle', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
     });
 
     test('LFO toggle changes frequency range', () => {
@@ -381,8 +376,7 @@ describe('ADSR TextInput controls', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const adsrButton = screen.getByRole('button', { name: 'ADSR' });
-        fireEvent.click(adsrButton);
+        addModule('ADSR');
     });
 
     test('renders Attack, Decay, Sustain, Release inputs', () => {
@@ -451,8 +445,7 @@ describe('Recorder module', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const recorderButton = screen.getByRole('button', { name: 'Recorder' });
-        fireEvent.click(recorderButton);
+        addModule('Recorder');
     });
 
     test('renders Record and Finish buttons', () => {
@@ -478,8 +471,7 @@ describe('Distortion module', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const distButton = screen.getByRole('button', { name: 'Distortion' });
-        fireEvent.click(distButton);
+        addModule('Distortion');
     });
 
     test('renders curve slider and oversample selector', () => {
@@ -504,8 +496,7 @@ describe('Dial (via Filter Q)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const filterButton = screen.getByRole('button', { name: 'Filter' });
-        fireEvent.click(filterButton);
+        addModule('Filter');
     });
 
     test('renders dial range and numeric input', () => {
@@ -545,8 +536,7 @@ describe('Dial clamping and transforms (via Filter Q)', () => {
     beforeEach(() => {
         const result = renderWithAudioContext(<App />);
         container = result.container;
-        const filterButton = screen.getByRole('button', { name: 'Filter' });
-        fireEvent.click(filterButton);
+        addModule('Filter');
     });
 
     test('Q above max-1 clamps on Enter', () => {

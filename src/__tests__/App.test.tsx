@@ -10,6 +10,12 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
+/** Opens the palette and clicks the named module to add it. */
+function addModule(name: string) {
+    fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+    fireEvent.click(screen.getByRole('option', { name }));
+}
+
 describe('App', () => {
     let app;
 
@@ -23,12 +29,18 @@ describe('App', () => {
         expect(container.querySelector('#logo')).toBeTruthy();
         expect(container.querySelector('#header')).toBeTruthy();
         expect(container.querySelector('#sidebar')).toBeTruthy();
+        expect(container.querySelector('#addModuleWrapper')).toBeTruthy();
         expect(container.querySelector('#playSpace')).toBeTruthy();
     });
 
-    test('renders all sidebar buttons', () => {
-        const buttons = screen.getAllByRole('button');
-        const names = buttons.map((b) => b.textContent);
+    test('renders add module button in header', () => {
+        expect(screen.getByRole('button', { name: 'Add module (N)' })).toBeTruthy();
+    });
+
+    test('palette shows all module options when opened', () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        const options = screen.getAllByRole('option');
+        const names = options.map((o) => o.textContent);
         expect(names).toContain('Oscillator');
         expect(names).toContain('Gain');
         expect(names).toContain('Filter');
@@ -39,6 +51,10 @@ describe('App', () => {
         expect(names).toContain('Reverb');
         expect(names).toContain('AudioInput');
         expect(names).toContain('Recorder');
+        expect(names).toContain('Compressor');
+        expect(names).toContain('Noise');
+        expect(names).toContain('LFO');
+        expect(names).toContain('Sequencer');
     });
 
     test('renders Output module', () => {
@@ -47,20 +63,18 @@ describe('App', () => {
 });
 
 describe('Module creation', () => {
-    test('clicking sidebar button creates a module', () => {
+    test('adding a module via palette creates it', () => {
         const { container } = renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         const modules = container.querySelectorAll('.moduleDiv');
         expect(modules.length).toBe(1);
     });
 
-    test('clicking button twice creates two modules', () => {
+    test('adding module twice creates two modules', () => {
         const { container } = renderWithAudioContext(<App />);
-        const gainButton = screen.getByRole('button', { name: 'Gain' });
-        fireEvent.click(gainButton);
-        fireEvent.click(gainButton);
+        addModule('Gain');
+        addModule('Gain');
 
         const modules = container.querySelectorAll('.moduleDiv');
         expect(modules.length).toBe(2);
@@ -68,19 +82,17 @@ describe('Module creation', () => {
 
     test('module displays its type name', () => {
         renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         // The module title paragraph should contain the type name
         const titles = screen.getAllByText('Oscillator');
-        // One is the sidebar button, one (or more) is the module title
-        expect(titles.length).toBeGreaterThanOrEqual(2);
+        // At least one: the module title
+        expect(titles.length).toBeGreaterThanOrEqual(1);
     });
 
     test('created module has input cord area', () => {
         const { container } = renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         const outputOuters = container.querySelectorAll('#outputOuter');
         expect(outputOuters.length).toBe(1);
@@ -88,8 +100,7 @@ describe('Module creation', () => {
 
     test('Gain module has output cord area (inputOnly=false)', () => {
         const { container } = renderWithAudioContext(<App />);
-        const gainButton = screen.getByRole('button', { name: 'Gain' });
-        fireEvent.click(gainButton);
+        addModule('Gain');
 
         const inputOuters = container.querySelectorAll('#inputOuter');
         expect(inputOuters.length).toBe(1);
@@ -97,8 +108,7 @@ describe('Module creation', () => {
 
     test('Oscillator module does NOT have output cord area (inputOnly=true)', () => {
         const { container } = renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         // Oscillator is inputOnly="true", should not render the output cord div
         const moduleDiv = container.querySelector('.moduleDiv');
@@ -110,8 +120,7 @@ describe('Module creation', () => {
 describe('Module deletion', () => {
     test('clicking close icon removes a module', () => {
         const { container } = renderWithAudioContext(<App />);
-        const gainButton = screen.getByRole('button', { name: 'Gain' });
-        fireEvent.click(gainButton);
+        addModule('Gain');
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
 
@@ -125,10 +134,8 @@ describe('Module deletion', () => {
 
     test('deleting one module preserves others', () => {
         const { container } = renderWithAudioContext(<App />);
-        const gainButton = screen.getByRole('button', { name: 'Gain' });
-        const filterButton = screen.getByRole('button', { name: 'Filter' });
-        fireEvent.click(gainButton);
-        fireEvent.click(filterButton);
+        addModule('Gain');
+        addModule('Filter');
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
 
@@ -144,8 +151,7 @@ describe('Module deletion', () => {
 describe('Patch cord validation', () => {
     test('entering patch mode shows cancel button', () => {
         const { container } = renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         // Click the input cord area to start patching
         const outputOuter = container.querySelector('#outputOuter');
@@ -158,8 +164,7 @@ describe('Patch cord validation', () => {
 
     test('cancelling patch mode hides cancel button', () => {
         const { container } = renderWithAudioContext(<App />);
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         // Start patch
         const outputOuter = container.querySelector('#outputOuter');
@@ -175,16 +180,12 @@ describe('Patch cord validation', () => {
     test('alert shows and can be dismissed', () => {
         const { container } = renderWithAudioContext(<App />);
         // Create an oscillator
-        const oscButton = screen.getByRole('button', { name: 'Oscillator' });
-        fireEvent.click(oscButton);
+        addModule('Oscillator');
 
         // Start a patch from oscillator output
         const outputOuter = container.querySelector('#outputOuter');
         fireEvent.click(outputOuter);
 
-        // Try to connect to the Output module (this is a valid connection, not self-patch)
-        // Instead, let's create a scenario that triggers an alert
-        // We need a module that can self-patch — but that requires outputMode + clicking own input
         // For now, just verify the alertBox starts hidden
         const alertBox = container.querySelector('.alertBox');
         expect(alertBox).toBeTruthy();
@@ -211,8 +212,8 @@ describe('Output module', () => {
 describe('Patch cord connection', () => {
     test('connecting two modules creates a visible cord', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -222,8 +223,8 @@ describe('Patch cord connection', () => {
 
     test('patch mode exits after successful connection', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -233,7 +234,7 @@ describe('Patch cord connection', () => {
 
     test('self-patch shows alert', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Gain' }));
@@ -245,8 +246,8 @@ describe('Patch cord connection', () => {
 
     test('duplicate patch shows alert', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         // First connection
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
@@ -263,7 +264,7 @@ describe('Patch cord connection', () => {
 
     test('param cross-ref shows alert', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Oscillator' }));
+        addModule('Oscillator');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Oscillator' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to frequency param' }));
@@ -275,9 +276,9 @@ describe('Patch cord connection', () => {
 
     test('multiple valid connections', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Panner' }));
+        addModule('Gain');
+        addModule('Filter');
+        addModule('Panner');
 
         // Connect Gain→Filter
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
@@ -293,8 +294,8 @@ describe('Patch cord connection', () => {
 describe('Patch cord deletion', () => {
     test('clicking a cord line removes it', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -307,8 +308,8 @@ describe('Patch cord deletion', () => {
 
     test('deleting a cord allows re-patching same route', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         // Connect then delete
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
@@ -326,9 +327,9 @@ describe('Patch cord deletion', () => {
 
     test('closing source module removes its cords', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Panner' }));
+        addModule('Gain');
+        addModule('Filter');
+        addModule('Panner');
 
         // Connect Gain→Filter and Gain→Panner
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
@@ -346,8 +347,8 @@ describe('Patch cord deletion', () => {
 
     test('closing target module removes cord to it', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -364,8 +365,8 @@ describe('Patch cord deletion', () => {
 describe('Cord keyboard interaction', () => {
     test('Enter key on cord line deletes it', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -377,8 +378,8 @@ describe('Cord keyboard interaction', () => {
 
     test('Space key on cord line deletes it', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
@@ -392,7 +393,7 @@ describe('Cord keyboard interaction', () => {
 describe('Cord dock keyboard interaction', () => {
     test('Enter on output dock starts patch mode', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         fireEvent.keyDown(screen.getByRole('button', { name: 'Connect from Gain' }), {
             key: 'Enter',
@@ -403,7 +404,7 @@ describe('Cord dock keyboard interaction', () => {
 
     test('Space on output dock starts patch mode', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         fireEvent.keyDown(screen.getByRole('button', { name: 'Connect from Gain' }), {
             key: ' ',
@@ -414,8 +415,8 @@ describe('Cord dock keyboard interaction', () => {
 
     test('Enter on input dock completes connection', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+        addModule('Gain');
+        addModule('Filter');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.keyDown(screen.getByRole('button', { name: 'Connect to Filter' }), {
@@ -427,7 +428,7 @@ describe('Cord dock keyboard interaction', () => {
 
     test('Enter on Output module dock completes connection', () => {
         const { container } = renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Gain' }));
+        addModule('Gain');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.keyDown(screen.getByRole('button', { name: 'Connect to Output' }), {

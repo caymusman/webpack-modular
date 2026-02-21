@@ -73,6 +73,17 @@ body {
     z-index: 3;
 }
 
+#sidebar {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background-color: $light;
+    padding: 0px;
+    margin: 0px;
+    z-index: 2;
+    filter: drop-shadow(0 0 10px $dark);
+}
+
 #header {
     height: 100%;
     width: 100%;
@@ -117,7 +128,7 @@ body {
 
         &__btn {
             height: auto;
-            padding: 3px 10px;
+            padding: 4px 10px;
             font-size: 10px;
             background: rgba(255, 255, 255, 0.08);
             color: rgba(255, 255, 255, 0.7);
@@ -126,8 +137,9 @@ body {
             width: auto;
             white-space: nowrap;
             display: inline-flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 1px;
             text-transform: none;
             transition:
                 background 0.15s,
@@ -144,11 +156,6 @@ body {
                 background: rgba(255, 255, 255, 0.1);
             }
 
-            i {
-                font-size: 8px;
-                opacity: 0.5;
-            }
-
             &--clear {
                 background: transparent;
                 border-color: rgba(200, 50, 50, 0.35);
@@ -160,6 +167,25 @@ body {
                     border-color: rgba(200, 50, 50, 0.6);
                 }
             }
+
+        }
+
+        &__btnLabel {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            i {
+                font-size: 8px;
+                opacity: 0.5;
+            }
+        }
+
+        &__shortcut {
+            font-size: 9px;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+            line-height: 1;
         }
 
         &__count {
@@ -245,41 +271,98 @@ body {
             font-size: 11px;
             font-style: italic;
         }
+
+        &__clearConfirm {
+            font-size: 10px;
+            color: rgba(220, 100, 100, 0.9);
+            white-space: nowrap;
+        }
+
+        &__btn--add {
+            padding: 4px 9px;
+
+            i {
+                font-size: 13px;
+                opacity: 1;
+            }
+        }
     }
 }
 
-#sidebar {
+#addModuleWrapper {
     position: relative;
     height: 100%;
-    width: 100%;
-    padding: 0px;
-    margin: 0px;
     display: flex;
-    flex-direction: column;
-    z-index: 2;
-    filter: drop-shadow(0 0 10px $dark);
+    align-items: center;
+    padding: 0 10px;
 
-    #sideButtons {
-        height: 100%;
-        width: 100%;
-    }
+    .modulePalette {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 500;
+        background: color.adjust($dark, $lightness: -8%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        width: 200px;
+        overflow: hidden;
 
-    .addBtn {
-        font-size: 0.6vmax;
-        text-shadow: 0.1vmax 0.1vmax 0.05vmax $mainPurple;
-        width: 100%;
-        height: 10%;
-        background-color: $light;
-        color: #555;
-        text-align: center;
-        margin: auto;
-        padding: 0px;
-        border: none;
-        border-radius: 0px;
+        &__search {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: $light;
+            font-size: 12px;
+            text-align: left;
 
-        &:hover {
-            background-color: $dark;
-            color: #ddd;
+            &::placeholder {
+                color: rgba(255, 255, 255, 0.3);
+            }
+
+            &:focus {
+                outline: none;
+                background: transparent;
+                color: $light;
+            }
+        }
+
+        &__list {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        &__item {
+            padding: 7px 12px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            text-align: left;
+
+            &:hover,
+            &--active {
+                background: rgba(255, 255, 255, 0.08);
+                color: $light;
+            }
+
+            &--disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+        }
+
+        &__empty {
+            padding: 10px 12px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
         }
     }
 }
@@ -479,11 +562,15 @@ body {
             transition:
                 background-color 0.3s,
                 color 0.3s;
-            &:hover {
+            &:hover,
+            &:focus-within {
                 background-color: color.adjust($dark, $lightness: 10%);
                 color: color.adjust($light, $lightness: 10%);
             }
-            &:hover {
+            // Show × on hover or when the close button is focused,
+            // but NOT when the title bar itself has keyboard focus
+            &:hover,
+            &:focus-within:not(:focus) {
                 .fa-times {
                     visibility: visible;
                     opacity: 1;
@@ -540,6 +627,87 @@ body {
     }
 }
 
+//------------------------------FOCUS VISIBLE---------------------------------
+
+// Global default — dark backgrounds (header, sidebar, play space, SVG)
+:focus-visible {
+    outline: 2px solid rgba(220, 220, 220, 0.75);
+    outline-offset: 2px;
+    box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.1),
+        0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+// Text/number inputs use border-bottom colour change — suppress duplicate ring
+input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+// Range inputs on dark backgrounds get a subtler ring
+input[type='range']:focus-visible {
+    outline: 2px solid rgba(220, 220, 220, 0.5);
+    outline-offset: 4px;
+    box-shadow: none;
+}
+
+// Cord docks are circles — outline would be square; use radial glow instead
+// opacity: 1 ensures the glow is visible even when the dock is normally hidden
+.cordOuter:focus-visible {
+    outline: none;
+    opacity: 1;
+    box-shadow:
+        0 0 0 2px rgba(220, 220, 220, 0.8),
+        0 0 10px rgba(255, 255, 255, 0.35);
+}
+
+// SVG lines don't support outline — change stroke instead
+line:focus-visible {
+    outline: none;
+    stroke: $light;
+    stroke-width: 5;
+}
+
+// ---- Module interior: light background (#ddd) — invert ring to dark ----
+
+// Buttons inside the module content area (Record, Finish, etc.)
+.moduleDiv button:focus-visible {
+    outline: 2px solid rgba(60, 60, 60, 0.7);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+// The close (×) button lives inside the dark title bar — restore light ring
+.moduleDiv p button:focus-visible {
+    outline: 2px solid rgba(220, 220, 220, 0.75);
+    outline-offset: 2px;
+    box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.1),
+        0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+// Text/number inputs inside modules
+.moduleDiv input[type='text']:focus-visible,
+.moduleDiv input[type='number']:focus-visible {
+    outline: 2px solid rgba(60, 60, 60, 0.6);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+// Range inputs inside modules
+.moduleDiv input[type='range']:focus-visible {
+    outline: 2px solid rgba(60, 60, 60, 0.55);
+    outline-offset: 3px;
+    box-shadow: none;
+}
+
+// Selector container inside modules
+.moduleDiv .selectorDiv:focus-visible {
+    outline: 2px solid rgba(60, 60, 60, 0.7);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
 //------------------------------SELECTOR DIV---------------------------------
 
 .selectorDiv {
@@ -559,8 +727,10 @@ body {
 
     #selectorContent {
         width: 100%;
+        min-width: max-content;
         display: none;
         position: absolute;
+        z-index: 200;
     }
 
     .selectorVal {
@@ -574,7 +744,8 @@ body {
         }
     }
 
-    &:hover {
+    &:hover,
+    &.selectorDiv--open {
         border-radius: 3px 3px 0px 0px;
         span {
             color: $mainPurple;
@@ -648,8 +819,8 @@ body {
         background-color: $dark;
     }
 
-    input:focus + .slider {
-        box-shadow: 0 0 1px $dark;
+    input:focus-visible + .slider {
+        box-shadow: 0 0 0 2px rgba(60, 60, 60, 0.6);
     }
 
     input:checked + .slider:before {
@@ -766,6 +937,176 @@ body {
         }
         margin-bottom: 3px;
     }
+}
+
+//---------------------------------------- COMPRESSOR MOD -------------------------------------------
+
+.compressorDiv {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0;
+}
+
+//---------------------------------------- NOISE MOD -------------------------------------------
+
+.noiseDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+
+    #noiseSelector {
+        z-index: 6;
+    }
+}
+
+//---------------------------------------- LFO MOD -------------------------------------------
+
+.lfoDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+
+    #lfoWaveSelector {
+        z-index: 6;
+        margin-bottom: 4px;
+    }
+}
+
+//---------------------------------------- SEQUENCER MOD -------------------------------------------
+
+.sequencerDiv {
+    width: 100%;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &__controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        #seqWaveSelector {
+            z-index: 6;
+        }
+    }
+
+    &__playBtn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        i {
+            font-size: 10px;
+        }
+    }
+
+    &__stepCount {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        flex-shrink: 0;
+    }
+
+    &__stepCountBtn {
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        border-radius: 3px;
+        font-size: 14px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+
+        &:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+    }
+
+    &__stepCountNum {
+        font-size: 10px;
+        min-width: 16px;
+        text-align: center;
+        opacity: 0.8;
+    }
+
+    &__steps {
+        display: grid;
+        gap: 3px;
+    }
+
+    &__step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        opacity: 1;
+        transition: opacity 0.15s;
+
+        &--muted {
+            opacity: 0.35;
+        }
+
+        &--playing &__stepNote {
+            background-color: color.adjust($dark, $lightness: 20%);
+            color: $light;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+        }
+    }
+
+    &__stepNote {
+        width: 100%;
+        font-size: 8px;
+        padding: 3px 1px;
+        border-radius: 3px;
+        cursor: pointer;
+        text-align: center;
+        background-color: $dark;
+        color: $light;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background-color 0.1s;
+
+        &:hover {
+            background-color: color.adjust($dark, $lightness: 10%);
+        }
+    }
+
+    &__stepToggle {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 1.5px solid $dark;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        transition: background 0.15s;
+
+        &--on {
+            background: $dark;
+        }
+    }
+}
+
+// Sequencer needs a wider drag container
+.dragDiv:has(.sequencerDiv) {
+    width: 36vw;
 }
 
 //---------------------------------------- OUTPUT MODULE ----------------------------------------

@@ -10,6 +10,10 @@ import { DistortionModule } from '../model/modules/DistortionModule';
 import { ReverbModule } from '../model/modules/ReverbModule';
 import { AudioInputModule } from '../model/modules/AudioInputModule';
 import { RecorderModule } from '../model/modules/RecorderModule';
+import { CompressorModule } from '../model/modules/CompressorModule';
+import { NoiseModule } from '../model/modules/NoiseModule';
+import { LFOModule } from '../model/modules/LFOModule';
+import { SequencerModule } from '../model/modules/SequencerModule';
 
 describe('NumericParam', () => {
     test('stores and retrieves value', () => {
@@ -153,6 +157,10 @@ describe('createModule factory', () => {
             'Reverb',
             'AudioInput',
             'Recorder',
+            'Compressor',
+            'Noise',
+            'LFO',
+            'Sequencer',
         ];
         types.forEach((type) => {
             const mod = createModule(type);
@@ -275,6 +283,60 @@ describe('SynthModule serialize/deserialize', () => {
         m2.deserialize(data);
         expect(m2.serialize()).toEqual({});
     });
+
+    test('CompressorModule round-trip', () => {
+        const m1 = new CompressorModule();
+        m1.params.threshold.value = -40;
+        m1.params.knee.value = 20;
+        m1.params.ratio.value = 8;
+        m1.params.attack.value = 0.01;
+        m1.params.release.value = 0.5;
+        const data = m1.serialize();
+        const m2 = new CompressorModule();
+        m2.deserialize(data);
+        expect(m2.params.threshold.value).toBe(-40);
+        expect(m2.params.knee.value).toBe(20);
+        expect(m2.params.ratio.value).toBe(8);
+        expect(m2.params.attack.value).toBe(0.01);
+        expect(m2.params.release.value).toBe(0.5);
+    });
+
+    test('NoiseModule round-trip', () => {
+        const m1 = new NoiseModule();
+        m1.params.noiseType.value = 'pink';
+        m1.params.gain.value = 0.4;
+        const data = m1.serialize();
+        const m2 = new NoiseModule();
+        m2.deserialize(data);
+        expect(m2.params.noiseType.value).toBe('pink');
+        expect(m2.params.gain.value).toBe(0.4);
+    });
+
+    test('LFOModule round-trip', () => {
+        const m1 = new LFOModule();
+        m1.params.rate.value = 5;
+        m1.params.depth.value = 200;
+        m1.params.waveType.value = 'triangle';
+        const data = m1.serialize();
+        const m2 = new LFOModule();
+        m2.deserialize(data);
+        expect(m2.params.rate.value).toBe(5);
+        expect(m2.params.depth.value).toBe(200);
+        expect(m2.params.waveType.value).toBe('triangle');
+    });
+
+    test('SequencerModule round-trip (params + steps)', () => {
+        const m1 = new SequencerModule();
+        m1.params.bpm.value = 180;
+        m1.steps[0] = 440;
+        m1.activeSteps[1] = false;
+        const data = m1.serialize();
+        const m2 = new SequencerModule();
+        m2.deserialize(data);
+        expect(m2.params.bpm.value).toBe(180);
+        expect(m2.steps[0]).toBe(440);
+        expect(m2.activeSteps[1]).toBe(false);
+    });
 });
 
 describe('SynthModule properties', () => {
@@ -292,5 +354,80 @@ describe('SynthModule properties', () => {
 
     test('getNode throws before init', () => {
         expect(() => new GainModule().getNode()).toThrow('not initialized');
+    });
+
+    test('CompressorModule inputOnly is false', () => {
+        expect(new CompressorModule().inputOnly).toBe(false);
+    });
+
+    test('NoiseModule inputOnly is true', () => {
+        expect(new NoiseModule().inputOnly).toBe(true);
+    });
+
+    test('LFOModule inputOnly is true', () => {
+        expect(new LFOModule().inputOnly).toBe(true);
+    });
+
+    test('SequencerModule inputOnly is true', () => {
+        expect(new SequencerModule().inputOnly).toBe(true);
+    });
+});
+
+describe('SequencerModule', () => {
+    test('defaults: 8 steps, all active, not running', () => {
+        const m = new SequencerModule();
+        expect(m.steps.length).toBe(8);
+        expect(m.activeSteps.length).toBe(8);
+        expect(m.activeSteps.every(Boolean)).toBe(true);
+        expect(m.isRunning).toBe(false);
+        expect(m.currentStep).toBe(0);
+    });
+
+    test('setStepCount grows the array', () => {
+        const m = new SequencerModule();
+        m.setStepCount(12);
+        expect(m.steps.length).toBe(12);
+        expect(m.activeSteps.length).toBe(12);
+    });
+
+    test('setStepCount shrinks the array', () => {
+        const m = new SequencerModule();
+        m.setStepCount(4);
+        expect(m.steps.length).toBe(4);
+        expect(m.activeSteps.length).toBe(4);
+    });
+
+    test('setStepCount clamps to minimum of 2', () => {
+        const m = new SequencerModule();
+        m.setStepCount(0);
+        expect(m.steps.length).toBe(2);
+    });
+
+    test('setStepCount clamps to maximum of 16', () => {
+        const m = new SequencerModule();
+        m.setStepCount(20);
+        expect(m.steps.length).toBe(16);
+    });
+
+    test('setStepCount resets currentStep when out of bounds', () => {
+        const m = new SequencerModule();
+        // Simulate internal step advancing to step 7
+        (m as unknown as { _currentStep: number })._currentStep = 7;
+        m.setStepCount(4);
+        expect(m.currentStep).toBe(0);
+    });
+
+    test('new steps added via setStepCount default to C4', () => {
+        const m = new SequencerModule();
+        m.setStepCount(10);
+        expect(m.steps[8]).toBeCloseTo(261.63, 1);
+        expect(m.steps[9]).toBeCloseTo(261.63, 1);
+    });
+
+    test('new steps added via setStepCount are active by default', () => {
+        const m = new SequencerModule();
+        m.setStepCount(10);
+        expect(m.activeSteps[8]).toBe(true);
+        expect(m.activeSteps[9]).toBe(true);
     });
 });
