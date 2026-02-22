@@ -10,11 +10,15 @@ import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
 import { getCenterPoint } from './utils/centerPoint';
 import { createModule } from './model/index';
 import { useAudioContext } from './audio/AudioContextProvider';
+import { useMIDILearn } from './midi/MIDILearnContext';
+import { useMIDIPlayback } from './midi/useMIDIPlayback';
 import { PatchCord, CordFromData, CordToData, ModuleRecord, CordCombos, Preset, SerializedConnection } from './types';
 
 export default function App() {
     const audioContext = useAudioContext();
+    const { learnMode, toggleLearnMode, loadMappings, serializeMappings } = useMIDILearn();
     const [list, setList] = useState<Map<string, ModuleRecord>>(new Map());
+    useMIDIPlayback(list);
     const [patchCords, setPatchCords] = useState<PatchCord[]>([]);
     const [cumulativeCordCount, setCumulativeCordCount] = useState(0);
     const [outputMode, setOutputMode] = useState(false);
@@ -291,14 +295,19 @@ export default function App() {
         const handleKeyDown = (e: KeyboardEvent) => {
             const target = e.target as Element;
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-            if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                e.preventDefault();
-                setPaletteOpen((prev) => !prev);
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.key === 'n' || e.key === 'N') {
+                    e.preventDefault();
+                    setPaletteOpen((prev) => !prev);
+                } else if (e.key === 'm' || e.key === 'M') {
+                    e.preventDefault();
+                    toggleLearnMode();
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [toggleLearnMode]);
 
     // Focus newly added module's title bar after it renders
     useEffect(() => {
@@ -571,8 +580,11 @@ export default function App() {
             if (preset.connections.length > 0) {
                 setPendingConnections(preset.connections);
             }
+
+            // Restore MIDI mappings
+            loadMappings(preset.midiMappings?.mappings ?? []);
         },
-        [patchCords, nodeRefs, audioContext, list]
+        [patchCords, nodeRefs, audioContext, list, loadMappings]
     );
 
     const cords: ReactElement[] = [];
@@ -617,7 +629,29 @@ export default function App() {
                         />
                     )}
                 </div>
-                <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} />
+                <div className="midi-btn-wrapper tooltip">
+                    <button
+                        className={'presetBar__btn' + (learnMode ? ' midi-learn-active' : '')}
+                        onClick={toggleLearnMode}
+                        aria-label={learnMode ? 'Exit MIDI learn mode (M)' : 'Enter MIDI learn mode (M)'}
+                    >
+                        <span>MIDI</span>
+                        <span className="presetBar__shortcut" aria-hidden="true">M</span>
+                    </button>
+                    <div className="tooltiptext midi-learn-tooltip" role="tooltip">
+                        <strong>MIDI Learn</strong>
+                        <ol>
+                            <li>Press <kbd>M</kbd> or click to enter learn mode</li>
+                            <li>Click (or focus + <kbd>Enter</kbd>) any knob or slider to arm it</li>
+                            <li>Move a MIDI knob → CC mapped</li>
+                            <li>Press a MIDI key on a frequency control → note mapped</li>
+                            <li>Click the ADSR Gate button to map note-on/off to the envelope</li>
+                            <li>Press <kbd>Esc</kbd> or <kbd>M</kbd> again to exit</li>
+                        </ol>
+                        <p>Mapped controls show an <kbd>M</kbd> badge. Mappings save with presets.</p>
+                    </div>
+                </div>
+                <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} getMIDIMappings={serializeMappings} />
             </div>
             <div id="sidebar"></div>
             <div id="playSpace">

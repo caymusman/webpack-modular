@@ -438,3 +438,65 @@ describe('Cord dock keyboard interaction', () => {
         expect(container.querySelectorAll('#patchCords line').length).toBe(1);
     });
 });
+
+describe('MIDI Learn button and keyboard shortcut', () => {
+    test('renders MIDI button in header', () => {
+        renderWithAudioContext(<App />);
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('clicking MIDI button enters learn mode (button label changes)', () => {
+        renderWithAudioContext(<App />);
+        const btn = screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' });
+        fireEvent.click(btn);
+        expect(screen.getByRole('button', { name: 'Exit MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('clicking MIDI button twice exits learn mode', () => {
+        renderWithAudioContext(<App />);
+        const btn = screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' });
+        fireEvent.click(btn);
+        fireEvent.click(screen.getByRole('button', { name: 'Exit MIDI learn mode (M)' }));
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('MIDI button has midi-learn-active class when active', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' }));
+        const btn = screen.getByRole('button', { name: 'Exit MIDI learn mode (M)' });
+        expect(btn.className).toContain('midi-learn-active');
+    });
+
+    test('pressing M key enters learn mode', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.keyDown(document.body, { key: 'm' });
+        expect(screen.getByRole('button', { name: 'Exit MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('pressing M key twice exits learn mode', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.keyDown(document.body, { key: 'm' });
+        fireEvent.keyDown(document.body, { key: 'M' });
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('M key inside an input does not toggle learn mode', () => {
+        const { container } = renderWithAudioContext(<App />);
+        const input = container.querySelector('input[type="text"]') as HTMLElement;
+        fireEvent.keyDown(input, { key: 'm' });
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('Escape key exits learn mode', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' }));
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+
+    test('M key with Ctrl modifier does not toggle learn mode', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.keyDown(document.body, { key: 'm', ctrlKey: true });
+        expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+});

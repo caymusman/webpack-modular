@@ -1,12 +1,14 @@
 import Slider from '../ui/Slider';
+import { makeMIDILearnId } from '../../midi/midiUtils';
 import { useParam } from '../../hooks/useParam';
 import type { DelayModule } from '../../model/modules/DelayModule';
 
 interface DelayProps {
     module: DelayModule;
+    parent: string;
 }
 
-function Delay({ module }: DelayProps) {
+function Delay({ module, parent }: DelayProps) {
     const [, setDelayTime] = useParam(module.params.delayTime);
 
     return (
@@ -18,6 +20,7 @@ function Delay({ module }: DelayProps) {
                 max={5}
                 step={0.01}
                 setAudio={setDelayTime}
+                midiLearnId={makeMIDILearnId(parent, 'delayTime')}
             ></Slider>
         </div>
     );
