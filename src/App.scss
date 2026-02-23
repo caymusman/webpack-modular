@@ -661,8 +661,8 @@ input[type='range']:focus-visible {
         0 0 10px rgba(255, 255, 255, 0.35);
 }
 
-// SVG lines don't support outline — change stroke instead
-line:focus-visible {
+// SVG paths don't support outline — change stroke instead
+path:focus-visible {
     outline: none;
     stroke: $light;
     stroke-width: 5;
@@ -1232,10 +1232,11 @@ svg {
     position: absolute;
     width: 100%;
     height: 100%;
+    overflow: visible;
     pointer-events: none;
     stroke-linecap: round;
 
-    line {
+    path {
         position: absolute;
         stroke: $dark;
         stroke-width: 3;
@@ -1245,6 +1246,15 @@ svg {
         &:hover {
             stroke: $cancelRed;
         }
+    }
+
+    path.cord-ghost {
+        stroke: $light;
+        stroke-width: 2;
+        stroke-dasharray: 8 5;
+        opacity: 0.6;
+        pointer-events: none;
+        cursor: default;
     }
 }
 

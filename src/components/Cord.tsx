@@ -11,6 +11,19 @@ interface CordProps {
     toName: string;
 }
 
+// Build a drooping cable path. The midpoint control point is pulled straight
+// down by `droop` pixels so the curve sags like a physical cable regardless
+// of whether the cord runs horizontally, vertically, or diagonally.
+export function cablePath(x1: number, y1: number, x2: number, y2: number): string {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const droop = Math.max(60, dist * 0.5);
+    const cpx = (x1 + x2) / 2;
+    const cpy = (y1 + y2) / 2 + droop;
+    return `M ${x1},${y1} Q ${cpx},${cpy} ${x2},${y2}`;
+}
+
 function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
     const handleClick = () => {
         deleteCord(id);
@@ -24,17 +37,15 @@ function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
     };
 
     return (
-        <line
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
+        <path
+            d={cablePath(x1, y1, x2, y2)}
+            fill="none"
             onClick={handleClick}
             role="button"
             aria-label={'Delete cord from ' + fromName + ' to ' + toName}
             tabIndex={0}
             onKeyDown={handleKeyDown}
-        ></line>
+        />
     );
 }
 

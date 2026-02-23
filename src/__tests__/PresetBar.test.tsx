@@ -81,14 +81,14 @@ describe('PresetBar', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(2);
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
 
         // Clear — click trigger then confirm
         fireEvent.click(screen.getByLabelText('Clear all'));
         fireEvent.click(screen.getByLabelText('Confirm clear'));
 
         expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('module creation after save does not collide IDs', () => {
