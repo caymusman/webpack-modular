@@ -218,7 +218,7 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
     });
 
     test('patch mode exits after successful connection', () => {
@@ -241,7 +241,7 @@ describe('Patch cord connection', () => {
 
         expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
         expect(container.querySelector('.alertBox__message').textContent).toContain('cannot plug a module into itself');
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('duplicate patch shows alert', () => {
@@ -259,7 +259,7 @@ describe('Patch cord connection', () => {
 
         expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
         expect(container.querySelector('.alertBox__message').textContent).toContain('already patched');
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
     });
 
     test('param cross-ref shows alert', () => {
@@ -271,7 +271,7 @@ describe('Patch cord connection', () => {
 
         expect(container.querySelector('.alertBox').className).toContain('alertBox--visible');
         expect(container.querySelector('.alertBox__message').textContent).toContain('thats a new one');
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('multiple valid connections', () => {
@@ -287,7 +287,7 @@ describe('Patch cord connection', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Panner' }));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(2);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(2);
     });
 });
 
@@ -299,11 +299,11 @@ describe('Patch cord deletion', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
 
-        fireEvent.click(container.querySelector('#patchCords line'));
+        fireEvent.click(container.querySelector('#patchCords path'));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('deleting a cord allows re-patching same route', () => {
@@ -314,14 +314,14 @@ describe('Patch cord deletion', () => {
         // Connect then delete
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
-        fireEvent.click(container.querySelector('#patchCords line'));
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        fireEvent.click(container.querySelector('#patchCords path'));
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
 
         // Reconnect same route
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
         expect(container.querySelector('.alertBox').className).not.toContain('alertBox--visible');
     });
 
@@ -336,13 +336,13 @@ describe('Patch cord deletion', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Panner' }));
-        expect(container.querySelectorAll('#patchCords line').length).toBe(2);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(2);
 
         // Close Gain
         fireEvent.click(screen.getByRole('button', { name: 'Close Gain' }));
         act(() => vi.advanceTimersByTime(300));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('closing target module removes cord to it', () => {
@@ -352,13 +352,13 @@ describe('Patch cord deletion', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
 
         // Close Filter
         fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
         act(() => vi.advanceTimersByTime(300));
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 });
 
@@ -371,9 +371,9 @@ describe('Cord keyboard interaction', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
-        fireEvent.keyDown(container.querySelector('#patchCords line'), { key: 'Enter' });
+        fireEvent.keyDown(container.querySelector('#patchCords path'), { key: 'Enter' });
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 
     test('Space key on cord line deletes it', () => {
@@ -384,9 +384,9 @@ describe('Cord keyboard interaction', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
 
-        fireEvent.keyDown(container.querySelector('#patchCords line'), { key: ' ' });
+        fireEvent.keyDown(container.querySelector('#patchCords path'), { key: ' ' });
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(0);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 });
 
@@ -423,7 +423,7 @@ describe('Cord dock keyboard interaction', () => {
             key: 'Enter',
         });
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
     });
 
     test('Enter on Output module dock completes connection', () => {
@@ -435,7 +435,303 @@ describe('Cord dock keyboard interaction', () => {
             key: 'Enter',
         });
 
-        expect(container.querySelectorAll('#patchCords line').length).toBe(1);
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
+    });
+});
+
+describe('Ghost cord (in-progress patch preview)', () => {
+    test('no ghost cord before entering patch mode', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('no ghost cord in patch mode before mouse moves', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord appears after entering patch mode and moving the mouse', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+    });
+
+    test('ghost cord has a valid SVG quadratic-bezier path attribute', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        const ghost = container.querySelector('.cord-ghost');
+        expect(ghost).not.toBeNull();
+        expect(ghost!.getAttribute('d')).toMatch(/^M [\d.eE+-]+,[\d.eE+-]+ Q [\d.eE+-]+,[\d.eE+-]+ [\d.eE+-]+,[\d.eE+-]+$/);
+    });
+
+    test('ghost cord disappears when patch connection is completed', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord disappears when patch is cancelled via the exit button', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+
+        fireEvent.click(container.querySelector('#patchExit')!);
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord updates position as mouse moves', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+
+        fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
+        const d1 = container.querySelector('.cord-ghost')!.getAttribute('d');
+
+        fireEvent.mouseMove(window, { clientX: 400, clientY: 250 });
+        const d2 = container.querySelector('.cord-ghost')!.getAttribute('d');
+
+        expect(d1).not.toBe(d2);
+    });
+});
+
+describe('Module deletion with active cords (disconnect safety)', () => {
+    test('deleting the source module removes its outgoing cord without crashing', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close Gain' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('circularly patched oscillators: deleting one removes both cords without crashing', () => {
+        // Regression test: dispose() calls node.disconnect() (all), then the
+        // setPatchCords updater tried to disconnect(destination) again → threw
+        // InvalidAccessError → React error boundary → "Something went wrong".
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Oscillator');
+        addModule('Oscillator');
+
+        const outputDocks = container.querySelectorAll('#outputOuter');
+        const paramDocks = container.querySelectorAll('#firstParam');
+
+        // Osc 0 → Osc 1's frequency modulation input
+        fireEvent.click(outputDocks[0]);
+        fireEvent.click(paramDocks[1]);
+
+        // Osc 1 → Osc 0's frequency modulation input (circular)
+        fireEvent.click(outputDocks[1]);
+        fireEvent.click(paramDocks[0]);
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(2);
+
+        // Delete one — must not crash and must clean up both cords
+        fireEvent.click(container.querySelectorAll('.fa-times')[0]);
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('deleting a module while a pending cord from another module exists does not crash', () => {
+        // Regression test: the second if-branch used el.toData! without a null
+        // guard — if a cord was pending (toData = null) it would throw TypeError.
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+
+        // Start a patch from Gain → pending cord with toData = null
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+
+        // Delete Filter (not the source) while the cord is still pending
+        fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        // Filter is gone; Gain and the pending cord still exist (Gain is still in patch mode)
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('deleting the destination module of a cord removes that cord', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
+    });
+});
+
+describe('Ghost cord (in-progress patch preview)', () => {
+    test('no ghost cord before entering patch mode', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('no ghost cord in patch mode before mouse moves', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord appears after entering patch mode and moving the mouse', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+    });
+
+    test('ghost cord has a valid SVG quadratic-bezier path attribute', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        const ghost = container.querySelector('.cord-ghost');
+        expect(ghost).not.toBeNull();
+        expect(ghost!.getAttribute('d')).toMatch(/^M [\d.eE+-]+,[\d.eE+-]+ Q [\d.eE+-]+,[\d.eE+-]+ [\d.eE+-]+,[\d.eE+-]+$/);
+    });
+
+    test('ghost cord disappears when patch connection is completed', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord disappears when patch is cancelled via the exit button', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.mouseMove(window, { clientX: 200, clientY: 300 });
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(1);
+
+        fireEvent.click(container.querySelector('#patchExit')!);
+        expect(container.querySelectorAll('.cord-ghost').length).toBe(0);
+    });
+
+    test('ghost cord updates position as mouse moves', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+
+        fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
+        const d1 = container.querySelector('.cord-ghost')!.getAttribute('d');
+
+        fireEvent.mouseMove(window, { clientX: 400, clientY: 250 });
+        const d2 = container.querySelector('.cord-ghost')!.getAttribute('d');
+
+        expect(d1).not.toBe(d2);
+    });
+});
+
+describe('Module deletion with active cords (disconnect safety)', () => {
+    test('deleting the source module removes its outgoing cord without crashing', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close Gain' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('circularly patched oscillators: deleting one removes both cords without crashing', () => {
+        // Regression test: dispose() calls node.disconnect() (all), then the
+        // setPatchCords updater tried to disconnect(destination) again → threw
+        // InvalidAccessError → React error boundary → "Something went wrong".
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Oscillator');
+        addModule('Oscillator');
+
+        const outputDocks = container.querySelectorAll('#outputOuter');
+        const paramDocks = container.querySelectorAll('#firstParam');
+
+        // Osc 0 → Osc 1's frequency modulation input
+        fireEvent.click(outputDocks[0]);
+        fireEvent.click(paramDocks[1]);
+
+        // Osc 1 → Osc 0's frequency modulation input (circular)
+        fireEvent.click(outputDocks[1]);
+        fireEvent.click(paramDocks[0]);
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(2);
+
+        // Delete one — must not crash and must clean up both cords
+        fireEvent.click(container.querySelectorAll('.fa-times')[0]);
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('deleting a module while a pending cord from another module exists does not crash', () => {
+        // Regression test: the second if-branch used el.toData! without a null
+        // guard — if a cord was pending (toData = null) it would throw TypeError.
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+
+        // Start a patch from Gain → pending cord with toData = null
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+
+        // Delete Filter (not the source) while the cord is still pending
+        fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        // Filter is gone; Gain and the pending cord still exist (Gain is still in patch mode)
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('deleting the destination module of a cord removes that cord', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+        fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Connect to Filter' }));
+        expect(container.querySelectorAll('#patchCords path').length).toBe(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close Filter' }));
+        act(() => vi.advanceTimersByTime(300));
+
+        expect(container.querySelectorAll('#patchCords path').length).toBe(0);
     });
 });
 

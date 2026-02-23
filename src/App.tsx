@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, createRef, ReactElement } fro
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import AlertBox from './components/AlertBox';
 import Area from './components/Area';
-import Cord from './components/Cord';
+import Cord, { cablePath } from './components/Cord';
 import Output from './components/Output';
 import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
@@ -30,6 +30,7 @@ export default function App() {
     const [moduleCounts, setModuleCounts] = useState<Record<string, number>>({});
     const [pendingConnections, setPendingConnections] = useState<SerializedConnection[] | null>(null);
     const [paletteOpen, setPaletteOpen] = useState(false);
+    const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
     const pendingCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingFocusRef = useRef<string | null>(null);
@@ -114,13 +115,20 @@ export default function App() {
             setPatchCords((prevCords) => {
                 const toRemove: PatchCord[] = [];
                 prevCords.forEach((el) => {
-                    if (el.fromData.fromModID === childKey) {
+                    const isFrom = el.fromData.fromModID === childKey;
+                    const isTo =
+                        el.toData !== null &&
+                        (el.toData.tomyKey === childKey ||
+                            getBaseModuleId(el.toData.tomyKey) === childKey);
+                    if (isFrom || isTo) {
                         toRemove.push(el);
-                        el.fromData.audio.disconnect(el.toData!.audio as AudioNode);
-                    }
-                    if (el.toData!.tomyKey === childKey || getBaseModuleId(el.toData!.tomyKey) === childKey) {
-                        toRemove.push(el);
-                        el.fromData.audio.disconnect(el.toData!.audio as AudioNode);
+                        if (el.toData) {
+                            try {
+                                el.fromData.audio.disconnect(el.toData.audio as AudioNode);
+                            } catch {
+                                // dispose() already called node.disconnect() on outgoing cords
+                            }
+                        }
                     }
                 });
                 return prevCords.filter((el) => !toRemove.includes(el));
@@ -361,6 +369,22 @@ export default function App() {
         };
         window.addEventListener('keydown', handleTab, true);
         return () => window.removeEventListener('keydown', handleTab, true);
+    }, [outputMode]);
+
+    // Track mouse position for the ghost cord while patching
+    useEffect(() => {
+        if (!outputMode) {
+            setMousePos(null);
+            return;
+        }
+        const handleMouseMove = (e: MouseEvent) => {
+            const svg = document.getElementById('patchCords');
+            if (!svg) return;
+            const { left, top } = svg.getBoundingClientRect();
+            setMousePos({ x: e.clientX - left, y: e.clientY - top });
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
     }, [outputMode]);
 
     // Process pending connections after preset load
@@ -657,6 +681,16 @@ export default function App() {
             <div id="playSpace">
                 <svg id="patchCords" aria-label="Patch cord connections">
                     {cords}
+                    {outputMode && mousePos && patchCords.length > 0 && (() => {
+                        const src = patchCords[patchCords.length - 1].fromData.fromLocation;
+                        return (
+                            <path
+                                className="cord-ghost"
+                                d={cablePath(src.x, src.y, mousePos.x, mousePos.y)}
+                                fill="none"
+                            />
+                        );
+                    })()}
                 </svg>
                 <AlertBox message={pingText} onDismiss={handlePingExit} />
                 <button
