@@ -3,13 +3,16 @@ import LogSlider from '../ui/LogSlider';
 import TextInput from '../ui/TextInput';
 import { useAudioContext } from '../../audio/AudioContextProvider';
 import { useParam } from '../../hooks/useParam';
+import { useMIDILearn } from '../../midi/MIDILearnContext';
+import { makeMIDILearnId } from '../../midi/midiUtils';
 import type { ADSRModule } from '../../model/modules/ADSRModule';
 
 interface ADSRProps {
     module: ADSRModule;
+    parent: string;
 }
 
-function ADSR({ module }: ADSRProps) {
+function ADSR({ module, parent }: ADSRProps) {
     const audioContext = useAudioContext();
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [running, setRunning] = useState(false);
@@ -18,6 +21,11 @@ function ADSR({ module }: ADSRProps) {
     const [decay, setDecay] = useParam(module.params.decay);
     const [sustain, setSustain] = useParam(module.params.sustain);
     const [release, setRelease] = useParam(module.params.release);
+    const { learnMode, armedControl, armControl, isMapped } = useMIDILearn();
+
+    const gateLearnId = makeMIDILearnId(parent, 'gate');
+    const isGateArmed = learnMode && armedControl?.midiLearnId === gateLearnId;
+    const isGateMapped = isMapped(gateLearnId);
 
     const handleAudio = useCallback(() => {
         const node = module.getNode() as GainNode;
@@ -70,6 +78,14 @@ function ADSR({ module }: ADSRProps) {
         }
     };
 
+    const handleGateArm = () => {
+        if (learnMode) {
+            armControl(gateLearnId, true);
+        }
+    };
+
+    const gateClass = isGateArmed ? 'midi-armed' : isGateMapped ? 'midi-mapped' : '';
+
     return (
         <div id="ADSRDiv">
             <LogSlider
@@ -89,6 +105,19 @@ function ADSR({ module }: ADSRProps) {
                 <button id="ADSRButton" onClick={handleAudio}>
                     Pulse
                 </button>
+                {learnMode && (
+                    <button
+                        id="ADSRGateButton"
+                        className={gateClass}
+                        onClick={handleGateArm}
+                        title="MIDI Gate: arm this ADSR for note-on/off triggering"
+                    >
+                        Gate
+                    </button>
+                )}
+                {!learnMode && isGateMapped && (
+                    <span className="midi-badge" style={{ position: 'static', display: 'inline-block' }}>M</span>
+                )}
             </div>
             <div id="ADSRControls">
                 <TextInput

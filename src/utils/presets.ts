@@ -1,8 +1,13 @@
-import { Preset, SerializedModule, SerializedConnection, ModuleRecord, PatchCord } from '../types';
+import { Preset, SerializedModule, SerializedConnection, ModuleRecord, PatchCord, MIDIMapping } from '../types';
 
 const STORAGE_PREFIX = 'presets::';
 
-export function serializePreset(name: string, list: Map<string, ModuleRecord>, patchCords: PatchCord[]): Preset {
+export function serializePreset(
+    name: string,
+    list: Map<string, ModuleRecord>,
+    patchCords: PatchCord[],
+    midiMappings: MIDIMapping[] = []
+): Preset {
     const modules: SerializedModule[] = [];
     list.forEach((mod) => {
         modules.push({
@@ -24,7 +29,11 @@ export function serializePreset(name: string, list: Map<string, ModuleRecord>, p
         }
     });
 
-    return { name, modules, connections };
+    const result: Preset = { name, modules, connections };
+    if (midiMappings.length > 0) {
+        result.midiMappings = { mappings: midiMappings };
+    }
+    return result;
 }
 
 export function deserializePreset(json: string): Preset | null {

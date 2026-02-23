@@ -8,16 +8,17 @@ import {
     exportPresetFile,
     importPresetFile,
 } from '../utils/presets';
-import { PatchCord, ModuleRecord, Preset } from '../types';
+import { PatchCord, ModuleRecord, Preset, MIDIMapping } from '../types';
 
 interface PresetBarProps {
     list: Map<string, ModuleRecord>;
     patchCords: PatchCord[];
     onLoad: (preset: Preset) => void;
     onClear: () => void;
+    getMIDIMappings: () => MIDIMapping[];
 }
 
-function PresetBar({ list, patchCords, onLoad, onClear }: PresetBarProps) {
+function PresetBar({ list, patchCords, onLoad, onClear, getMIDIMappings }: PresetBarProps) {
     const [presetName, setPresetName] = useState('');
     const [savedPresets, setSavedPresets] = useState<string[]>(() => listPresets());
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -81,11 +82,11 @@ function PresetBar({ list, patchCords, onLoad, onClear }: PresetBarProps) {
     const handleSave = useCallback(() => {
         const name = presetName.trim();
         if (!name) return;
-        const preset = serializePreset(name, list, patchCords);
+        const preset = serializePreset(name, list, patchCords, getMIDIMappings());
         saveToLocalStorage(preset);
         setPresetName('');
         refreshPresets();
-    }, [presetName, list, patchCords, refreshPresets]);
+    }, [presetName, list, patchCords, getMIDIMappings, refreshPresets]);
 
     const handleLoadByName = useCallback(
         (name: string) => {
@@ -108,9 +109,9 @@ function PresetBar({ list, patchCords, onLoad, onClear }: PresetBarProps) {
 
     const handleExport = useCallback(() => {
         const name = presetName.trim() || 'preset';
-        const preset = serializePreset(name, list, patchCords);
+        const preset = serializePreset(name, list, patchCords, getMIDIMappings());
         exportPresetFile(preset);
-    }, [presetName, list, patchCords]);
+    }, [presetName, list, patchCords, getMIDIMappings]);
 
     const handleImport = useCallback(() => {
         fileInputRef.current?.click();

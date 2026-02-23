@@ -1,4 +1,5 @@
 import { ChangeEvent, useState } from 'react';
+import { useMIDILearn } from '../../midi/MIDILearnContext';
 
 interface LogSliderProps {
     labelName: string;
@@ -7,12 +8,14 @@ interface LogSliderProps {
     max: number;
     mid: number;
     onChange: (val: number) => void;
+    midiLearnId?: string;
 }
 
-function LogSlider({ labelName, tooltipText, min, max, mid, onChange }: LogSliderProps) {
+function LogSlider({ labelName, tooltipText, min, max, mid, onChange, midiLearnId }: LogSliderProps) {
     const [val, setVal] = useState<string | number>(Number(Math.log(mid) / Math.log(max)));
     const [num, setNum] = useState<string | number>(mid);
     const [prevMid, setPrevMid] = useState(mid);
+    const { learnMode, armedControl, armControl, isMapped } = useMIDILearn();
 
     // Adjust state when mid prop changes (React-recommended pattern)
     if (mid !== prevMid) {
@@ -20,6 +23,9 @@ function LogSlider({ labelName, tooltipText, min, max, mid, onChange }: LogSlide
         setVal(Number(Math.log(mid) / Math.log(max)));
         setNum(mid);
     }
+
+    const isArmed = learnMode && armedControl?.midiLearnId === midiLearnId;
+    const isMappedControl = midiLearnId ? isMapped(midiLearnId) : false;
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setVal(event.target.value);
@@ -46,8 +52,30 @@ function LogSlider({ labelName, tooltipText, min, max, mid, onChange }: LogSlide
         onChange(Number(Number(temp).toFixed(2)));
     };
 
+    const handleArm = () => {
+        if (learnMode && midiLearnId) {
+            armControl(midiLearnId);
+        }
+    };
+
+    const extraClass = isArmed ? ' midi-armed' : isMappedControl ? ' midi-mapped' : '';
+    const learnProps = learnMode && midiLearnId
+        ? {
+              tabIndex: 0,
+              role: 'button' as const,
+              'aria-label': `Arm ${tooltipText} for MIDI learn`,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleArm();
+                  }
+              },
+          }
+        : {};
+
     return (
-        <div id={labelName + 'logSliderWhole'} className="tooltip">
+        <div id={labelName + 'logSliderWhole'} className={'tooltip' + extraClass} onClick={handleArm} {...learnProps}>
+            {isMappedControl && !learnMode && <span className="midi-badge">M</span>}
             <input
                 className={labelName + 'freqNumRange'}
                 value={val}

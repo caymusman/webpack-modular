@@ -6,7 +6,7 @@ import {
     listPresets,
     deletePreset,
 } from '../utils/presets';
-import { ModuleRecord, PatchCord } from '../types';
+import { ModuleRecord, PatchCord, MIDIMapping } from '../types';
 import { GainModule } from '../model/modules/GainModule';
 import { OscillatorModule } from '../model/modules/OscillatorModule';
 import { FilterModule } from '../model/modules/FilterModule';
@@ -264,5 +264,77 @@ describe('localStorage helpers', () => {
 
         const names = listPresets();
         expect(names).toEqual(['Test']);
+    });
+});
+
+describe('serializePreset with MIDI mappings', () => {
+    const emptyList = new Map<string, ModuleRecord>();
+    const noCords: PatchCord[] = [];
+
+    test('omits midiMappings field when no mappings are provided', () => {
+        const preset = serializePreset('No MIDI', emptyList, noCords);
+        expect(preset.midiMappings).toBeUndefined();
+    });
+
+    test('omits midiMappings field when an empty array is passed', () => {
+        const preset = serializePreset('No MIDI', emptyList, noCords, []);
+        expect(preset.midiMappings).toBeUndefined();
+    });
+
+    test('includes midiMappings when CC mappings are provided', () => {
+        const mappings: MIDIMapping[] = [
+            { kind: 'cc', channel: 0, cc: 7, moduleKey: 'Oscillator 0', paramKey: 'frequency', min: 20, max: 20000 },
+        ];
+        const preset = serializePreset('With MIDI', emptyList, noCords, mappings);
+        expect(preset.midiMappings).toBeDefined();
+        expect(preset.midiMappings!.mappings).toHaveLength(1);
+        expect(preset.midiMappings!.mappings[0]).toEqual(mappings[0]);
+    });
+
+    test('includes midiMappings when note and gate mappings are provided', () => {
+        const mappings: MIDIMapping[] = [
+            { kind: 'note', channel: 0, moduleKey: 'Oscillator 0', paramKey: 'frequency' },
+            { kind: 'gate', channel: 0, moduleKey: 'ADSR 0' },
+        ];
+        const preset = serializePreset('Note+Gate', emptyList, noCords, mappings);
+        expect(preset.midiMappings!.mappings).toHaveLength(2);
+    });
+
+    test('MIDI mappings survive save → load round-trip through localStorage', () => {
+        const mappings: MIDIMapping[] = [
+            { kind: 'cc', channel: 1, cc: 11, moduleKey: 'Filter 0', paramKey: 'frequency', min: 200, max: 8000 },
+        ];
+        const preset = serializePreset('MIDI Round-trip', emptyList, noCords, mappings);
+        saveToLocalStorage(preset);
+        const loaded = loadFromLocalStorage('MIDI Round-trip');
+        expect(loaded).not.toBeNull();
+        expect(loaded!.midiMappings!.mappings).toEqual(mappings);
+    });
+
+    test('deserializePreset accepts presets with midiMappings field', () => {
+        const json = JSON.stringify({
+            name: 'Test',
+            modules: [],
+            connections: [],
+            midiMappings: {
+                mappings: [
+                    { kind: 'cc', channel: 0, cc: 7, moduleKey: 'Oscillator 0', paramKey: 'frequency', min: 0, max: 1 },
+                ],
+            },
+        });
+        const result = deserializePreset(json);
+        expect(result).not.toBeNull();
+        expect(result!.midiMappings!.mappings).toHaveLength(1);
+    });
+
+    test('deserializePreset accepts presets without midiMappings (backward compat)', () => {
+        const json = JSON.stringify({
+            name: 'Old Preset',
+            modules: [],
+            connections: [],
+        });
+        const result = deserializePreset(json);
+        expect(result).not.toBeNull();
+        expect(result!.midiMappings).toBeUndefined();
     });
 });

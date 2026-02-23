@@ -47,8 +47,34 @@ export interface SerializedConnection {
     toModID: string;
 }
 
+export interface MIDICCMapping {
+    kind: 'cc';
+    channel: number;
+    cc: number;
+    moduleKey: string;
+    paramKey: string;
+    min: number;
+    max: number;
+}
+
+export interface MIDINoteMapping {
+    kind: 'note';
+    channel: number;
+    moduleKey: string;
+    paramKey: 'frequency';
+}
+
+export interface MIDIGateMapping {
+    kind: 'gate';
+    channel: number;
+    moduleKey: string;
+}
+
+export type MIDIMapping = MIDICCMapping | MIDINoteMapping | MIDIGateMapping;
+
 export interface Preset {
     name: string;
     modules: SerializedModule[];
     connections: SerializedConnection[];
+    midiMappings?: { mappings: MIDIMapping[] };
 }

@@ -1,13 +1,15 @@
 import Slider from '../ui/Slider';
 import Selector from '../ui/Selector';
+import { makeMIDILearnId } from '../../midi/midiUtils';
 import { useParam } from '../../hooks/useParam';
 import type { DistortionModule } from '../../model/modules/DistortionModule';
 
 interface DistortionProps {
     module: DistortionModule;
+    parent: string;
 }
 
-function Distortion({ module }: DistortionProps) {
+function Distortion({ module, parent }: DistortionProps) {
     const [, setCurve] = useParam(module.params.curve);
     const [, setOversample] = useParam(module.params.oversample);
 
@@ -20,6 +22,7 @@ function Distortion({ module }: DistortionProps) {
                 max={800}
                 step={0.1}
                 setAudio={setCurve}
+                midiLearnId={makeMIDILearnId(parent, 'curve')}
             ></Slider>
             <Selector
                 id="distortionSelector"

@@ -4,6 +4,7 @@ import LogSlider from '../ui/LogSlider';
 import Slider from '../ui/Slider';
 import { makeParamKey } from '../../utils/moduleId';
 import { getCenterPointFromEvent } from '../../utils/centerPoint';
+import { makeMIDILearnId } from '../../midi/midiUtils';
 import { useParam } from '../../hooks/useParam';
 import { CordToData } from '../../types';
 import type { OscillatorModule } from '../../model/modules/OscillatorModule';
@@ -70,6 +71,7 @@ function Oscillator({ module, parent, handleOutput }: OscillatorProps) {
                 max={max}
                 mid={mid}
                 onChange={setFrequency}
+                midiLearnId={makeMIDILearnId(parent, 'frequency')}
             />
             <div
                 className="cordOuter tooltip"
@@ -91,7 +93,7 @@ function Oscillator({ module, parent, handleOutput }: OscillatorProps) {
                     </span>
                 </div>
             </div>
-            <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} step={1} setAudio={setModDepth} />
+            <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} step={1} setAudio={setModDepth} midiLearnId={makeMIDILearnId(parent, 'modDepth')} />
         </div>
     );
 }

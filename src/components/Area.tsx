@@ -244,15 +244,15 @@ function Area({
             case 'Gain':
                 return <Gain module={module as GainModule} parent={myKey} handleOutput={handleOutput} />;
             case 'Filter':
-                return <Filter module={module as FilterModule} />;
+                return <Filter module={module as FilterModule} parent={myKey} />;
             case 'Panner':
-                return <Panner module={module as PannerModule} />;
+                return <Panner module={module as PannerModule} parent={myKey} />;
             case 'ADSR':
-                return <ADSR module={module as ADSRModule} />;
+                return <ADSR module={module as ADSRModule} parent={myKey} />;
             case 'Delay':
-                return <Delay module={module as DelayModule} />;
+                return <Delay module={module as DelayModule} parent={myKey} />;
             case 'Distortion':
-                return <Distortion module={module as DistortionModule} />;
+                return <Distortion module={module as DistortionModule} parent={myKey} />;
             case 'Reverb':
                 return <Reverb module={module as ReverbModule} />;
             case 'AudioInput':
