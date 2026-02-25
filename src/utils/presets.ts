@@ -12,10 +12,11 @@ export function serializePreset(
     list.forEach((mod) => {
         modules.push({
             key: mod.myKey,
-            type: mod.name,
+            type: mod.filling,
             inputOnly: mod.inputOnly,
             position: { x: mod.position.x, y: mod.position.y },
             params: mod.module.serialize(),
+            ...(mod.name !== mod.filling && { displayName: mod.name }),
         });
     });
 

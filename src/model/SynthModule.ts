@@ -3,6 +3,8 @@ import { Param } from './Param';
 export abstract class SynthModule {
     abstract readonly type: string;
     abstract readonly inputOnly: boolean;
+    /** When true, Area hides the output (send) dock — module is a signal sink only */
+    readonly sinkOnly: boolean = false;
     abstract readonly params: Record<string, Param<unknown>>;
 
     protected node: AudioNode | null = null;

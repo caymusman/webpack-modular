@@ -34,12 +34,21 @@ export interface ModuleRecord {
 
 export type CordCombos = Record<string, string[]>;
 
+export interface CanvasTransform {
+    panX: number;
+    panY: number;
+    zoom: number;
+    playSpaceLeft: number;
+    playSpaceTop: number;
+}
+
 export interface SerializedModule {
     key: string;
     type: string;
     inputOnly: boolean;
     position: Point;
     params: Record<string, unknown>;
+    displayName?: string;
 }
 
 export interface SerializedConnection {

@@ -13,6 +13,7 @@ import { CompressorModule } from './modules/CompressorModule';
 import { NoiseModule } from './modules/NoiseModule';
 import { LFOModule } from './modules/LFOModule';
 import { SequencerModule } from './modules/SequencerModule';
+import { OutputModule } from './modules/OutputModule';
 
 export { SynthModule } from './SynthModule';
 export { Param, NumericParam, EnumParam, BoolParam } from './Param';
@@ -30,6 +31,7 @@ export { CompressorModule } from './modules/CompressorModule';
 export { NoiseModule } from './modules/NoiseModule';
 export { LFOModule } from './modules/LFOModule';
 export { SequencerModule } from './modules/SequencerModule';
+export { OutputModule } from './modules/OutputModule';
 
 export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean }> = [
     { type: 'Oscillator', inputOnly: true },
@@ -46,6 +48,7 @@ export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean }> = 
     { type: 'Noise', inputOnly: true },
     { type: 'LFO', inputOnly: true },
     { type: 'Sequencer', inputOnly: true },
+    { type: 'Output', inputOnly: false },
 ];
 
 const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
@@ -63,6 +66,7 @@ const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
     Noise: () => new NoiseModule(),
     LFO: () => new LFOModule(),
     Sequencer: () => new SequencerModule(),
+    Output: () => new OutputModule(),
 };
 
 export function createModule(type: string): SynthModule {

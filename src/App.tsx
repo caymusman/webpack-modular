@@ -3,7 +3,6 @@ import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import AlertBox from './components/AlertBox';
 import Area from './components/Area';
 import Cord, { cablePath } from './components/Cord';
-import Output from './components/Output';
 import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
@@ -12,7 +11,17 @@ import { createModule } from './model/index';
 import { useAudioContext } from './audio/AudioContextProvider';
 import { useMIDILearn } from './midi/MIDILearnContext';
 import { useMIDIPlayback } from './midi/useMIDIPlayback';
-import { PatchCord, CordFromData, CordToData, ModuleRecord, CordCombos, Preset, SerializedConnection } from './types';
+import {
+    PatchCord,
+    CordFromData,
+    CordToData,
+    ModuleRecord,
+    CordCombos,
+    Preset,
+    SerializedConnection,
+    Point,
+    CanvasTransform,
+} from './types';
 
 export default function App() {
     const audioContext = useAudioContext();
@@ -31,9 +40,37 @@ export default function App() {
     const [pendingConnections, setPendingConnections] = useState<SerializedConnection[] | null>(null);
     const [paletteOpen, setPaletteOpen] = useState(false);
     const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+    const [invalidFlashTarget, setInvalidFlashTarget] = useState<string | null>(null);
+
+    // Infinite canvas state
+    const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+
+    // Refs for stable access inside event handlers / effects
+    const panRef = useRef<Point>({ x: 0, y: 0 });
+    const zoomRef = useRef(1);
+    const playSpaceRef = useRef<HTMLDivElement>(null);
+    const isPanning = useRef(false);
+    const panStart = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
+
+    // Keep refs in sync with state (assignment in render body is intentional)
+    panRef.current = pan;
+    zoomRef.current = zoom;
 
     const pendingCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingFocusRef = useRef<string | null>(null);
+
+    // Stable transform accessor — reads refs so it never goes stale
+    const getCanvasTransform = useCallback((): CanvasTransform => {
+        const r = playSpaceRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+        return {
+            panX: panRef.current.x,
+            panY: panRef.current.y,
+            zoom: zoomRef.current,
+            playSpaceLeft: r.left,
+            playSpaceTop: r.top,
+        };
+    }, []);
 
     const getNodeRef = useCallback(
         (key: string) => {
@@ -78,6 +115,14 @@ export default function App() {
 
             pendingFocusRef.current = childKey;
             setCordCombos((prev) => ({ ...prev, [childKey]: [] }));
+
+            // Spawn new modules at the current viewport centre in canvas space
+            const rect = playSpaceRef.current?.getBoundingClientRect();
+            const vpW = rect?.width ?? 800;
+            const vpH = rect?.height ?? 600;
+            const cx = (vpW / 2 - panRef.current.x) / zoomRef.current;
+            const cy = (vpH / 2 - panRef.current.y) / zoomRef.current;
+
             setList((prev) => {
                 const newMap = new Map(prev);
                 newMap.set(childKey, {
@@ -85,7 +130,7 @@ export default function App() {
                     filling: type,
                     name: type,
                     inputOnly: inputOnly,
-                    position: { x: 0, y: 0 },
+                    position: { x: cx - 60, y: cy - 60 },
                     module: mod,
                 });
                 return newMap;
@@ -169,12 +214,18 @@ export default function App() {
 
                     if (fromMod === info.tomyKey) {
                         myAlert('You cannot plug a module into itself!');
+                        setInvalidFlashTarget(info.tomyKey);
+                        setTimeout(() => setInvalidFlashTarget(null), 400);
                         return prevCords.slice(0, -1);
                     } else if (cordCombos[fromMod] && cordCombos[fromMod].includes(info.tomyKey)) {
                         myAlert("You've already patched this cable!");
+                        setInvalidFlashTarget(info.tomyKey);
+                        setTimeout(() => setInvalidFlashTarget(null), 400);
                         return prevCords.slice(0, -1);
                     } else if (info.tomyKey.includes(fromMod)) {
                         myAlert('Hahaha thats a new one. Nice try.');
+                        setInvalidFlashTarget(info.tomyKey);
+                        setTimeout(() => setInvalidFlashTarget(null), 400);
                         return prevCords.slice(0, -1);
                     } else {
                         lastEl.toData = info;
@@ -224,21 +275,29 @@ export default function App() {
                 }
                 return newMap;
             });
+            const transform = getCanvasTransform();
             const newCords = [...patchCords];
             newCords.forEach((el) => {
                 if (el.fromData.fromModID === modID) {
-                    el.fromData.fromLocation = getCenterPoint(document.getElementById(modID + 'outputInner')!);
+                    el.fromData.fromLocation = getCenterPoint(
+                        document.getElementById(modID + 'outputInner')!,
+                        transform
+                    );
                 } else if (el.toData!.tomyKey === modID) {
-                    el.toData!.toLocation = getCenterPoint(document.getElementById(modID + 'inputInner')!);
+                    el.toData!.toLocation = getCenterPoint(
+                        document.getElementById(modID + 'inputInner')!,
+                        transform
+                    );
                 } else if (el.toData!.tomyKey.includes(' ') && getBaseModuleId(el.toData!.tomyKey) === modID) {
                     el.toData!.toLocation = getCenterPoint(
-                        document.getElementById(el.toData!.tomyKey + ' inputInner')!
+                        document.getElementById(el.toData!.tomyKey + ' inputInner')!,
+                        transform
                     );
                 }
             });
             setPatchCords(newCords);
         },
-        [patchCords]
+        [patchCords, getCanvasTransform]
     );
 
     const handleDragStop = useCallback((modID: string, _e: DraggableEvent, data: DraggableData) => {
@@ -253,17 +312,22 @@ export default function App() {
     }, []);
 
     const handleResize = useCallback(() => {
+        const transform = getCanvasTransform();
         setPatchCords((prevCords) => {
             const newCords = [...prevCords];
             newCords.forEach((el) => {
                 el.fromData.fromLocation = getCenterPoint(
-                    document.getElementById(el.fromData.fromModID + 'outputInner')!
+                    document.getElementById(el.fromData.fromModID + 'outputInner')!,
+                    transform
                 );
-                el.toData!.toLocation = getCenterPoint(document.getElementById(el.toData!.tomyKey + 'inputInner')!);
+                el.toData!.toLocation = getCenterPoint(
+                    document.getElementById(el.toData!.tomyKey + 'inputInner')!,
+                    transform
+                );
             });
             return newCords;
         });
-    }, []);
+    }, [getCanvasTransform]);
 
     const handleNudge = useCallback(
         (modID: string, dx: number, dy: number) => {
@@ -283,6 +347,17 @@ export default function App() {
         [handleResize]
     );
 
+    const handleRename = useCallback((key: string, newName: string) => {
+        setList((prev) => {
+            const m = new Map(prev);
+            const r = m.get(key);
+            const filling = r?.filling ?? key;
+            if (r) m.set(key, { ...r, name: newName || filling });
+            return m;
+        });
+    }, []);
+
+    // Window resize — throttled via rAF
     useEffect(() => {
         let rafId: number | null = null;
         const throttledResize = () => {
@@ -299,11 +374,45 @@ export default function App() {
         };
     }, [handleResize]);
 
+    // Non-passive wheel handler for pan + zoom
+    useEffect(() => {
+        const el = playSpaceRef.current;
+        if (!el) return;
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) {
+                const r = el.getBoundingClientRect();
+                const mx = e.clientX - r.left;
+                const my = e.clientY - r.top;
+                setZoom((prev) => {
+                    const factor = e.deltaY < 0 ? 1.08 : 0.93;
+                    const next = Math.min(Math.max(prev * factor, 0.25), 3);
+                    setPan((p) => ({
+                        x: mx - (mx - p.x) * (next / prev),
+                        y: my - (my - p.y) * (next / prev),
+                    }));
+                    return next;
+                });
+            } else {
+                setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+            }
+        };
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => el.removeEventListener('wheel', onWheel);
+    }, []);
+
+    // Global keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const target = e.target as Element;
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '0') {
+                    e.preventDefault();
+                    setPan({ x: 0, y: 0 });
+                    setZoom(1);
+                }
+            } else if (!e.altKey) {
                 if (e.key === 'n' || e.key === 'N') {
                     e.preventDefault();
                     setPaletteOpen((prev) => !prev);
@@ -348,7 +457,6 @@ export default function App() {
             if (e.key !== 'Tab') return;
             e.preventDefault();
 
-            // Exclude the source module's own input dock to prevent self-patch tabbing
             const sourceDock = document.querySelector('.cordOuter.patchSource');
             const sourceInputDock = sourceDock?.closest('.moduleDiv')?.querySelector('[id="inputOuter"]');
 
@@ -371,17 +479,19 @@ export default function App() {
         return () => window.removeEventListener('keydown', handleTab, true);
     }, [outputMode]);
 
-    // Track mouse position for the ghost cord while patching
+    // Ghost cord — mouse position in canvas space
     useEffect(() => {
         if (!outputMode) {
             setMousePos(null);
             return;
         }
         const handleMouseMove = (e: MouseEvent) => {
-            const svg = document.getElementById('patchCords');
-            if (!svg) return;
-            const { left, top } = svg.getBoundingClientRect();
-            setMousePos({ x: e.clientX - left, y: e.clientY - top });
+            const r = playSpaceRef.current?.getBoundingClientRect();
+            if (!r) return;
+            setMousePos({
+                x: (e.clientX - r.left - panRef.current.x) / zoomRef.current,
+                y: (e.clientY - r.top - panRef.current.y) / zoomRef.current,
+            });
         };
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -392,7 +502,6 @@ export default function App() {
         if (!pendingConnections) return;
 
         const tryConnect = () => {
-            // Check all referenced modules are initialized
             const allReady = pendingConnections.every((conn) => {
                 const toModBase = conn.toModID.endsWith(' param') ? getBaseModuleId(conn.toModID) : conn.toModID;
                 if (toModBase === 'Output') return true;
@@ -418,6 +527,7 @@ export default function App() {
                 newCombos[key] = [];
             });
 
+            const transform = getCanvasTransform();
             let cordIdx = cumulativeCordCount;
             pendingConnections.forEach((conn) => {
                 const fromRecord = list.get(conn.fromModID);
@@ -462,8 +572,8 @@ export default function App() {
                     : conn.toModID + 'inputInner';
                 const toEl = document.getElementById(toSuffix);
 
-                const fromLocation = fromEl ? getCenterPoint(fromEl) : { x: 0, y: 0 };
-                const toLocation = toEl ? getCenterPoint(toEl) : { x: 0, y: 0 };
+                const fromLocation = fromEl ? getCenterPoint(fromEl, transform) : { x: 0, y: 0 };
+                const toLocation = toEl ? getCenterPoint(toEl, transform) : { x: 0, y: 0 };
 
                 newCords.push({
                     id: 'cord' + cordIdx,
@@ -492,7 +602,6 @@ export default function App() {
             return true;
         };
 
-        // Try immediately, then retry after a short delay for DOM elements
         if (!tryConnect()) {
             pendingCheckRef.current = setTimeout(() => {
                 tryConnect();
@@ -504,10 +613,9 @@ export default function App() {
                 clearTimeout(pendingCheckRef.current);
             }
         };
-    }, [pendingConnections, list, cumulativeCordCount]);
+    }, [pendingConnections, list, cumulativeCordCount, getCanvasTransform]);
 
     const clearAll = useCallback(() => {
-        // Disconnect all existing cords
         patchCords.forEach((cord) => {
             if (cord.toData) {
                 try {
@@ -518,7 +626,6 @@ export default function App() {
             }
         });
 
-        // Dispose all modules
         list.forEach((record) => {
             record.module.dispose();
         });
@@ -536,7 +643,6 @@ export default function App() {
 
     const loadPreset = useCallback(
         (preset: Preset) => {
-            // Clear existing state
             patchCords.forEach((cord) => {
                 if (cord.toData) {
                     try {
@@ -547,14 +653,12 @@ export default function App() {
                 }
             });
 
-            // Dispose existing modules
             list.forEach((record) => {
                 record.module.dispose();
             });
 
             nodeRefs.clear();
 
-            // Compute module counts from preset
             const counts: Record<string, number> = {};
             preset.modules.forEach((mod) => {
                 const parts = mod.key.split(' ');
@@ -565,7 +669,6 @@ export default function App() {
                 }
             });
 
-            // Build module list
             const newList = new Map<string, ModuleRecord>();
             const newCombos: CordCombos = {};
             let hasAudioIn = false;
@@ -580,7 +683,7 @@ export default function App() {
                 newList.set(mod.key, {
                     myKey: mod.key,
                     filling: mod.type,
-                    name: mod.type,
+                    name: mod.displayName ?? mod.type,
                     inputOnly: mod.inputOnly,
                     position: mod.position,
                     module: synthMod,
@@ -600,12 +703,10 @@ export default function App() {
             setPatchSource(null);
             setAudioIn(hasAudioIn);
 
-            // Set pending connections to be processed after modules render
             if (preset.connections.length > 0) {
                 setPendingConnections(preset.connections);
             }
 
-            // Restore MIDI mappings
             loadMappings(preset.midiMappings?.mappings ?? []);
         },
         [patchCords, nodeRefs, audioContext, list, loadMappings]
@@ -678,20 +779,121 @@ export default function App() {
                 <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} getMIDIMappings={serializeMappings} />
             </div>
             <div id="sidebar"></div>
-            <div id="playSpace">
-                <svg id="patchCords" aria-label="Patch cord connections">
-                    {cords}
-                    {outputMode && mousePos && patchCords.length > 0 && (() => {
-                        const src = patchCords[patchCords.length - 1].fromData.fromLocation;
+            <div
+                id="playSpace"
+                ref={playSpaceRef}
+                onPointerDown={(e) => {
+                    // Only start panning when clicking on the playSpace or canvas background
+                    const id = (e.target as Element).id;
+                    if (id !== 'playSpace' && id !== 'canvas') return;
+                    isPanning.current = true;
+                    panStart.current = {
+                        mouseX: e.clientX,
+                        mouseY: e.clientY,
+                        panX: pan.x,
+                        panY: pan.y,
+                    };
+                    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+                    (e.currentTarget as HTMLDivElement).style.cursor = 'grabbing';
+                }}
+                onPointerMove={(e) => {
+                    if (!isPanning.current) return;
+                    setPan({
+                        x: panStart.current.panX + e.clientX - panStart.current.mouseX,
+                        y: panStart.current.panY + e.clientY - panStart.current.mouseY,
+                    });
+                }}
+                onPointerUp={(e) => {
+                    if (!isPanning.current) return;
+                    isPanning.current = false;
+                    (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+                    (e.currentTarget as HTMLDivElement).style.cursor = '';
+                }}
+                onPointerCancel={() => {
+                    isPanning.current = false;
+                }}
+            >
+                {/* Canvas — everything inside is transformed together */}
+                <div
+                    id="canvas"
+                    style={{
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                        transformOrigin: '0 0',
+                    }}
+                >
+                    <svg id="patchCords" aria-label="Patch cord connections">
+                        {cords}
+                        {outputMode && mousePos && patchCords.length > 0 && (() => {
+                            const src = patchCords[patchCords.length - 1].fromData.fromLocation;
+                            return (
+                                <path
+                                    className="cord-ghost"
+                                    d={cablePath(src.x, src.y, mousePos.x, mousePos.y)}
+                                    fill="none"
+                                />
+                            );
+                        })()}
+                    </svg>
+
+                    {[...list].map(([key, { myKey, filling, name, inputOnly, position, module }]) => {
+                        const ref = getNodeRef(key);
                         return (
-                            <path
-                                className="cord-ghost"
-                                d={cablePath(src.x, src.y, mousePos.x, mousePos.y)}
-                                fill="none"
-                            />
+                            <Draggable
+                                onDrag={(e, data) => handleDrag(key, e, data)}
+                                onStop={(e, data) => handleDragStop(key, e, data)}
+                                key={key}
+                                handle="p"
+                                cancel="input"
+                                nodeRef={ref}
+                                position={position}
+                                scale={zoom}
+                            >
+                                <div className="dragDiv" ref={ref}>
+                                    <Area
+                                        key={myKey}
+                                        myKey={myKey}
+                                        filling={filling}
+                                        name={name}
+                                        handleClose={handleClose}
+                                        outputMode={outputMode}
+                                        addPatch={addCord}
+                                        handleOutput={handleOutput}
+                                        inputOnly={inputOnly}
+                                        alert={myAlert}
+                                        patchSource={patchSource}
+                                        module={module}
+                                        handleNudge={handleNudge}
+                                        getCanvasTransform={getCanvasTransform}
+                                        onRename={handleRename}
+                                        isFlashing={invalidFlashTarget === myKey}
+                                    />
+                                </div>
+                            </Draggable>
                         );
-                    })()}
-                </svg>
+                    })}
+
+                </div>
+
+                {/* Zoom controls — fixed to playSpace corner, outside canvas */}
+                <div className="zoom-controls">
+                    <button
+                        className="zoom-controls__btn iconBtn"
+                        onClick={() => setZoom((z) => Math.min(z * 1.2, 3))}
+                        aria-label="Zoom in"
+                    >+</button>
+                    <button
+                        className="zoom-controls__btn zoom-controls__btn--reset iconBtn"
+                        onClick={() => { setPan({ x: 0, y: 0 }); setZoom(1); }}
+                        aria-label="Reset zoom (Ctrl+0)"
+                        title="Reset zoom (Ctrl+0)"
+                    >{Math.round(zoom * 100)}%</button>
+                    <button
+                        className="zoom-controls__btn iconBtn"
+                        onClick={() => setZoom((z) => Math.max(z * 0.8, 0.25))}
+                        aria-label="Zoom out"
+                    >−</button>
+                </div>
+
                 <AlertBox message={pingText} onDismiss={handlePingExit} />
                 <button
                     id="patchExit"
@@ -701,40 +903,6 @@ export default function App() {
                 >
                     <i className="fa fa-times-circle" aria-hidden="true"></i>
                 </button>
-
-                {[...list].map(([key, { myKey, filling, name, inputOnly, position, module }]) => {
-                    const ref = getNodeRef(key);
-                    return (
-                        <Draggable
-                            onDrag={(e, data) => handleDrag(key, e, data)}
-                            onStop={(e, data) => handleDragStop(key, e, data)}
-                            key={key}
-                            handle="p"
-                            bounds="parent"
-                            nodeRef={ref}
-                            position={position}
-                        >
-                            <div className="dragDiv" ref={ref}>
-                                <Area
-                                    key={myKey}
-                                    myKey={myKey}
-                                    filling={filling}
-                                    name={name}
-                                    handleClose={handleClose}
-                                    outputMode={outputMode}
-                                    addPatch={addCord}
-                                    handleOutput={handleOutput}
-                                    inputOnly={inputOnly}
-                                    alert={myAlert}
-                                    patchSource={patchSource}
-                                    module={module}
-                                    handleNudge={handleNudge}
-                                />
-                            </div>
-                        </Draggable>
-                    );
-                })}
-                <Output handleOutput={handleOutput} />
             </div>
         </div>
     );
