@@ -13,8 +13,9 @@ import Compressor from './modules/Compressor';
 import Noise from './modules/Noise';
 import LFO from './modules/LFO';
 import Sequencer from './modules/Sequencer';
+import OutputView from './modules/OutputView';
 import { getCenterPointFromEvent } from '../utils/centerPoint';
-import { CordFromData, CordToData } from '../types';
+import { CordFromData, CordToData, CanvasTransform } from '../types';
 import type { SynthModule } from '../model/SynthModule';
 import type { GainModule } from '../model/modules/GainModule';
 import type { OscillatorModule } from '../model/modules/OscillatorModule';
@@ -30,6 +31,7 @@ import type { CompressorModule } from '../model/modules/CompressorModule';
 import type { NoiseModule } from '../model/modules/NoiseModule';
 import type { LFOModule } from '../model/modules/LFOModule';
 import type { SequencerModule } from '../model/modules/SequencerModule';
+import type { OutputModule } from '../model/modules/OutputModule';
 
 interface AreaProps {
     myKey: string;
@@ -44,6 +46,9 @@ interface AreaProps {
     patchSource: string | null;
     module: SynthModule;
     handleNudge: (modID: string, dx: number, dy: number) => void;
+    getCanvasTransform: () => CanvasTransform;
+    onRename: (key: string, newName: string) => void;
+    isFlashing: boolean;
 }
 
 const FOCUSABLE_SELECTORS =
@@ -64,8 +69,13 @@ function Area({
     patchSource,
     module,
     handleNudge,
+    getCanvasTransform,
+    onRename,
+    isFlashing,
 }: AreaProps) {
     const [closing, setClosing] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [localName, setLocalName] = useState(name);
     const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const titleRef = useRef<HTMLParagraphElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -103,12 +113,10 @@ function Area({
             if (heldKeys.current.has('ArrowDown')) dy += 1;
 
             if (dx !== 0 || dy !== 0) {
-                // Normalize so diagonal movement has the same speed as cardinal
                 const len = Math.sqrt(dx * dx + dy * dy);
                 accumRef.current.x += (dx / len) * NUDGE_SPEED * dt;
                 accumRef.current.y += (dy / len) * NUDGE_SPEED * dt;
 
-                // Only pass whole-pixel moves to keep positions integers
                 const intX = Math.trunc(accumRef.current.x);
                 const intY = Math.trunc(accumRef.current.y);
                 accumRef.current.x -= intX;
@@ -154,10 +162,15 @@ function Area({
         }, 250);
     }, [closing, handleClose, myKey]);
 
+    const commitRename = useCallback(() => {
+        setIsEditing(false);
+        onRename(myKey, localName.trim());
+    }, [onRename, myKey, localName]);
+
     const handleCreatePatch = useCallback(
         (event: React.MouseEvent | React.KeyboardEvent) => {
             if (!outputMode) {
-                const center = getCenterPointFromEvent(event);
+                const center = getCenterPointFromEvent(event, getCanvasTransform());
                 addPatch({
                     fromModID: myKey,
                     fromLocation: center,
@@ -165,29 +178,27 @@ function Area({
                 });
             }
         },
-        [outputMode, addPatch, myKey, getAudioNode]
+        [outputMode, addPatch, myKey, getAudioNode, getCanvasTransform]
     );
 
     const onOutput = useCallback(
         (event: React.MouseEvent | React.KeyboardEvent) => {
-            const center = getCenterPointFromEvent(event);
+            const center = getCenterPointFromEvent(event, getCanvasTransform());
             handleOutput({
                 tomyKey: myKey,
                 toLocation: center,
                 audio: getAudioNode(),
             });
         },
-        [handleOutput, myKey, getAudioNode]
+        [handleOutput, myKey, getAudioNode, getCanvasTransform]
     );
 
     const handleContainerKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLDivElement>) => {
             if (e.key === 'Tab') {
-                // In patch mode the global Tab handler takes over — let it through
                 if (outputMode) return;
                 if (!containerRef.current) return;
 
-                // Tab from the title bar itself → jump to the adjacent module's title bar
                 if (document.activeElement === titleRef.current) {
                     const allHandles = Array.from(
                         document.querySelectorAll<HTMLElement>('[data-module-handle]')
@@ -204,7 +215,6 @@ function Area({
                     return;
                 }
 
-                // Tab trap within the module for all other controls
                 const focusable = Array.from(
                     containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
                 ).filter((el) => getComputedStyle(el).visibility !== 'hidden');
@@ -232,7 +242,6 @@ function Area({
                     titleRef.current?.focus();
                 }
             }
-            // When outputMode, Escape bubbles to the window patch-cancel listener
         },
         [outputMode]
     );
@@ -267,6 +276,8 @@ function Area({
                 return <LFO module={module as LFOModule} />;
             case 'Sequencer':
                 return <Sequencer module={module as SequencerModule} />;
+            case 'Output':
+                return <OutputView module={module as OutputModule} />;
             default:
                 return <div>Hahahahaha theres nothing here!</div>;
         }
@@ -284,6 +295,7 @@ function Area({
                 tabIndex={0}
                 aria-label={name + ' module'}
                 onKeyDown={(e) => {
+                    if (isEditing) return; // input handles its own keys
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         const firstControl = containerRef.current
@@ -313,14 +325,29 @@ function Area({
                 <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn">
                     <i className="fa fa-times" aria-hidden="true"></i>
                 </button>
-                {name}
+                {isEditing ? (
+                    <input
+                        className="module-rename-input"
+                        value={localName}
+                        onChange={(e) => setLocalName(e.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+                            if (e.key === 'Escape') { setIsEditing(false); setLocalName(name); }
+                        }}
+                        autoFocus
+                        aria-label="Rename module"
+                    />
+                ) : (
+                    <span onDoubleClick={() => { setIsEditing(true); setLocalName(name); }}>{name}</span>
+                )}
             </p>
 
-            {/*eventually will be unique module fillings*/}
             <div id="innerModDiv">{renderFilling()}</div>
 
-            {/*input patch cords area*/}
-            <div
+            {/*output send dock — hidden for sink-only modules like Output*/}
+            {!module.sinkOnly && <div
                 className={
                     outputMode && patchSource === myKey
                         ? 'cordOuter show patchSource'
@@ -341,12 +368,15 @@ function Area({
                 }}
             >
                 <div className="cordInner" id={myKey + 'outputInner'}></div>
-            </div>
-            {/*output patch cords area*/}
+            </div>}
+            {/*input receive dock*/}
 
             {!inputOnly && (
                 <div
-                    className={outputMode ? 'cordOuter show raise interactive' : 'cordOuter show'}
+                    className={
+                        (outputMode ? 'cordOuter show raise interactive' : 'cordOuter show') +
+                        (isFlashing ? ' cord-invalid-flash' : '')
+                    }
                     id="inputOuter"
                     role="button"
                     aria-label={'Connect to ' + name}

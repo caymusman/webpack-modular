@@ -55,10 +55,12 @@ describe('App', () => {
         expect(names).toContain('Noise');
         expect(names).toContain('LFO');
         expect(names).toContain('Sequencer');
+        expect(names).toContain('Output');
     });
 
-    test('renders Output module', () => {
-        expect(screen.getByText('Output')).toBeTruthy();
+    test('Output appears in palette', () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        expect(screen.getByRole('option', { name: 'Output' })).toBeTruthy();
     });
 });
 
@@ -195,17 +197,19 @@ describe('Patch cord validation', () => {
 
 describe('Output module', () => {
     test('output has volume slider', () => {
-        const { container } = renderWithAudioContext(<App />);
-        const slider = container.querySelector('#gainSlider');
+        renderWithAudioContext(<App />);
+        addModule('Output');
+        const slider = screen.getByRole('slider', { name: 'Master volume' });
         expect(slider).toBeTruthy();
-        expect(slider.type).toBe('range');
+        expect((slider as HTMLInputElement).type).toBe('range');
     });
 
     test('output volume slider changes value', () => {
-        const { container } = renderWithAudioContext(<App />);
-        const slider = container.querySelector('#gainSlider');
+        renderWithAudioContext(<App />);
+        addModule('Output');
+        const slider = screen.getByRole('slider', { name: 'Master volume' });
         fireEvent.change(slider, { target: { value: '0.8' } });
-        expect(slider.value).toBe('0.8');
+        expect((slider as HTMLInputElement).value).toBe('0.8');
     });
 });
 
@@ -429,6 +433,7 @@ describe('Cord dock keyboard interaction', () => {
     test('Enter on Output module dock completes connection', () => {
         const { container } = renderWithAudioContext(<App />);
         addModule('Gain');
+        addModule('Output');
 
         fireEvent.click(screen.getByRole('button', { name: 'Connect from Gain' }));
         fireEvent.keyDown(screen.getByRole('button', { name: 'Connect to Output' }), {
