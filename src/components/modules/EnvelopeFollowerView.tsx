@@ -61,7 +61,7 @@ export default function EnvelopeFollowerView({ module, parent }: EnvelopeFollowe
             <div className="envFollowerDiv__meter">
                 <div className="envFollowerDiv__bar" style={{ width: pct + '%' }} />
             </div>
-            <div className="envFollowerDiv__cv">CV: {smoothedRef.current.toFixed(3)}</div>
+            <div className="envFollowerDiv__cv">CV: {level.toFixed(3)}</div>
             <Slider
                 labelName="envAttack"
                 tooltipText="Attack (ms)"

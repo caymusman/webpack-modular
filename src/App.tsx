@@ -381,7 +381,7 @@ export default function App() {
         if (selectedModules.size === 0) return;
         const toDelete = new Set(selectedModules);
 
-        let newList = new Map(list);
+        const newList = new Map(list);
         let newCords = [...patchCords];
         const newCombos = { ...cordCombos };
 
@@ -1158,7 +1158,7 @@ export default function App() {
         // Reset history to single empty snapshot
         historyStack.current = [{ modules: [], connections: [] }];
         historyIndex.current = 0;
-    }, [patchCords, nodeRefs, list, captureSnapshot]);
+    }, [patchCords, nodeRefs, list]);
 
     const loadPreset = useCallback(
         (preset: Preset) => {
@@ -1236,7 +1236,7 @@ export default function App() {
             historyStack.current = [presetEntry];
             historyIndex.current = 0;
         },
-        [patchCords, nodeRefs, audioContext, list, loadMappings, captureSnapshot]
+        [patchCords, nodeRefs, audioContext, list, loadMappings]
     );
 
     const cords: ReactElement[] = [];

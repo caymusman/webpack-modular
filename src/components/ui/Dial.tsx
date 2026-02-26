@@ -11,7 +11,7 @@ interface DialProps {
 }
 
 function Dial({ name, min, max, onChange, midiLearnId, initialValue }: DialProps) {
-    const initSlider = initialValue != null && initialValue > 0 ? Math.log(initialValue + 1) / Math.log(max) : 0;
+    const initSlider = initialValue !== null && initialValue !== undefined && initialValue > 0 ? Math.log(initialValue + 1) / Math.log(max) : 0;
     const [value, setValue] = useState<string | number>(initSlider);
     const [num, setNum] = useState<string | number>(initialValue ?? 0);
     const [rotPercent, setRotPercent] = useState(initSlider * 180);
