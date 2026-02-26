@@ -9,6 +9,7 @@ interface CordProps {
     y2: number;
     fromName: string;
     toName: string;
+    highlighted?: boolean;
 }
 
 // Build a drooping cable path. The midpoint control point is pulled straight
@@ -24,7 +25,7 @@ export function cablePath(x1: number, y1: number, x2: number, y2: number): strin
     return `M ${x1},${y1} Q ${cpx},${cpy} ${x2},${y2}`;
 }
 
-function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
+function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName, highlighted }: CordProps) {
     const handleClick = () => {
         deleteCord(id);
     };
@@ -40,6 +41,7 @@ function Cord({ deleteCord, id, x1, y1, x2, y2, fromName, toName }: CordProps) {
         <path
             d={cablePath(x1, y1, x2, y2)}
             fill="none"
+            className={highlighted ? 'cord--insert-target' : undefined}
             onClick={handleClick}
             role="button"
             aria-label={'Delete cord from ' + fromName + ' to ' + toName}

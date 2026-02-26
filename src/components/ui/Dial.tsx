@@ -7,12 +7,14 @@ interface DialProps {
     max: number;
     onChange: (val: number) => void;
     midiLearnId?: string;
+    initialValue?: number;
 }
 
-function Dial({ name, min, max, onChange, midiLearnId }: DialProps) {
-    const [value, setValue] = useState<string | number>(0);
-    const [num, setNum] = useState<string | number>(0);
-    const [rotPercent, setRotPercent] = useState(0);
+function Dial({ name, min, max, onChange, midiLearnId, initialValue }: DialProps) {
+    const initSlider = initialValue != null && initialValue > 0 ? Math.log(initialValue + 1) / Math.log(max) : 0;
+    const [value, setValue] = useState<string | number>(initSlider);
+    const [num, setNum] = useState<string | number>(initialValue ?? 0);
+    const [rotPercent, setRotPercent] = useState(initSlider * 180);
     const { learnMode, armedControl, armControl, isMapped } = useMIDILearn();
 
     const isArmed = learnMode && armedControl?.midiLearnId === midiLearnId;

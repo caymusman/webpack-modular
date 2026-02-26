@@ -13,7 +13,7 @@ interface AudioInputProps {
 function AudioInput({ module, alert, handleClose }: AudioInputProps) {
     const audioContext = useAudioContext();
     const mediaStream = useRef<MediaStream | null>(null);
-    const [, setGain] = useParam(module.params.gain);
+    const [gain, setGain] = useParam(module.params.gain);
 
     useEffect(() => {
         const gainNode = module.getNode() as GainNode;
@@ -45,7 +45,7 @@ function AudioInput({ module, alert, handleClose }: AudioInputProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [audioContext, handleClose, alert]);
 
-    return <Slider labelName="audioInGain" tooltipText="Gain" min={0} max={1} step={0.01} setAudio={setGain} />;
+    return <Slider labelName="audioInGain" tooltipText="Gain" min={0} max={1} step={0.01} setAudio={setGain} initialValue={gain} />;
 }
 
 export default AudioInput;

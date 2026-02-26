@@ -45,6 +45,10 @@ export class OscillatorModule extends SynthModule {
         this.modulatorGain.connect((this.node as OscillatorNode).frequency);
         (this.node as OscillatorNode).start();
 
+        // Output gain for bypass (mute)
+        this._outputGain = ctx.createGain();
+        (this.node as OscillatorNode).connect(this._outputGain);
+
         return this.node;
     }
 

@@ -14,6 +14,11 @@ import Noise from './modules/Noise';
 import LFO from './modules/LFO';
 import Sequencer from './modules/Sequencer';
 import OutputView from './modules/OutputView';
+import ScopeView from './modules/ScopeView';
+import MixerView from './modules/MixerView';
+import BitcrusherView from './modules/BitcrusherView';
+import EnvelopeFollowerView from './modules/EnvelopeFollowerView';
+import MIDINoteView from './modules/MIDINoteView';
 import { getCenterPointFromEvent } from '../utils/centerPoint';
 import { CordFromData, CordToData, CanvasTransform } from '../types';
 import type { SynthModule } from '../model/SynthModule';
@@ -32,6 +37,11 @@ import type { NoiseModule } from '../model/modules/NoiseModule';
 import type { LFOModule } from '../model/modules/LFOModule';
 import type { SequencerModule } from '../model/modules/SequencerModule';
 import type { OutputModule } from '../model/modules/OutputModule';
+import type { ScopeModule } from '../model/modules/ScopeModule';
+import type { MixerModule } from '../model/modules/MixerModule';
+import type { BitcrusherModule } from '../model/modules/BitcrusherModule';
+import type { EnvelopeFollowerModule } from '../model/modules/EnvelopeFollowerModule';
+import type { MIDINoteModule } from '../model/modules/MIDINoteModule';
 
 interface AreaProps {
     myKey: string;
@@ -49,6 +59,9 @@ interface AreaProps {
     getCanvasTransform: () => CanvasTransform;
     onRename: (key: string, newName: string) => void;
     isFlashing: boolean;
+    isSelected?: boolean;
+    onSelect?: (key: string) => void;
+    onDuplicate?: (key: string) => void;
 }
 
 const FOCUSABLE_SELECTORS =
@@ -72,12 +85,16 @@ function Area({
     getCanvasTransform,
     onRename,
     isFlashing,
+    isSelected = false,
+    onSelect,
+    onDuplicate,
 }: AreaProps) {
     const [closing, setClosing] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(name);
+    const [bypassed, setBypassed] = useState(false);
     const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const titleRef = useRef<HTMLParagraphElement>(null);
+    const titleRef = useRef<HTMLElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Nudge loop state — all kept in refs so the RAF closure stays stable
@@ -96,7 +113,7 @@ function Area({
         };
     }, []);
 
-    const startNudgeLoop = useCallback(() => {
+const startNudgeLoop = useCallback(() => {
         if (rafRef.current !== null) return;
         accumRef.current = { x: 0, y: 0 };
         let lastTime: number | null = null;
@@ -148,7 +165,7 @@ function Area({
 
     const getAudioNode = useCallback((): AudioNode => {
         try {
-            return module.getNode();
+            return module.getOutputNode() ?? module.getNode();
         } catch {
             return {} as AudioNode;
         }
@@ -181,16 +198,22 @@ function Area({
         [outputMode, addPatch, myKey, getAudioNode, getCanvasTransform]
     );
 
+    const handleBypass = useCallback(() => {
+        const newBypassed = !bypassed;
+        setBypassed(newBypassed);
+        module.setBypass(newBypassed);
+    }, [bypassed, module]);
+
     const onOutput = useCallback(
         (event: React.MouseEvent | React.KeyboardEvent) => {
             const center = getCenterPointFromEvent(event, getCanvasTransform());
             handleOutput({
                 tomyKey: myKey,
                 toLocation: center,
-                audio: getAudioNode(),
+                audio: module.getInputNode(),
             });
         },
-        [handleOutput, myKey, getAudioNode, getCanvasTransform]
+        [handleOutput, myKey, module, getCanvasTransform]
     );
 
     const handleContainerKeyDown = useCallback(
@@ -278,6 +301,16 @@ function Area({
                 return <Sequencer module={module as SequencerModule} />;
             case 'Output':
                 return <OutputView module={module as OutputModule} />;
+            case 'Scope':
+                return <ScopeView module={module as ScopeModule} />;
+            case 'Mixer':
+                return <MixerView module={module as MixerModule} parent={myKey} handleOutput={handleOutput} />;
+            case 'Bitcrusher':
+                return <BitcrusherView module={module as BitcrusherModule} parent={myKey} />;
+            case 'EnvelopeFollower':
+                return <EnvelopeFollowerView module={module as EnvelopeFollowerModule} parent={myKey} />;
+            case 'MIDINote':
+                return <MIDINoteView module={module as MIDINoteModule} />;
             default:
                 return <div>Hahahahaha theres nothing here!</div>;
         }
@@ -285,17 +318,22 @@ function Area({
 
     return (
         <div
-            className={`moduleDiv${closing ? ' moduleDiv--closing' : ''}`}
+            className={`moduleDiv${closing ? ' moduleDiv--closing' : ''}${isSelected ? ' moduleDiv--selected' : ''}${bypassed ? ' moduleDiv--bypassed' : ''}`}
             ref={containerRef}
             onKeyDown={handleContainerKeyDown}
         >
-            <p
+            <header
                 ref={titleRef}
                 data-module-handle=""
                 tabIndex={0}
                 aria-label={name + ' module'}
                 onKeyDown={(e) => {
                     if (isEditing) return; // input handles its own keys
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                        e.preventDefault();
+                        onDuplicate?.(myKey);
+                        return;
+                    }
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         const firstControl = containerRef.current
@@ -321,6 +359,12 @@ function Area({
                     if (heldKeys.current.size === 0) stopNudgeLoop();
                 }}
                 onBlur={stopNudgeLoop}
+                onClick={(e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        onSelect?.(myKey);
+                    }
+                }}
             >
                 <button onClick={onClose} aria-label={'Close ' + name} className="iconBtn">
                     <i className="fa fa-times" aria-hidden="true"></i>
@@ -342,7 +386,16 @@ function Area({
                 ) : (
                     <span onDoubleClick={() => { setIsEditing(true); setLocalName(name); }}>{name}</span>
                 )}
-            </p>
+                <button
+                    className={`bypassBtn${bypassed ? ' bypassBtn--active' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); handleBypass(); }}
+                    aria-label={bypassed ? 'Unbypass ' + name : 'Bypass ' + name}
+                    aria-pressed={bypassed}
+                    title={bypassed ? 'Bypassed (click to enable)' : 'Bypass'}
+                >
+                    <i className="fa fa-power-off" aria-hidden="true"></i>
+                </button>
+            </header>
 
             <div id="innerModDiv">{renderFilling()}</div>
 

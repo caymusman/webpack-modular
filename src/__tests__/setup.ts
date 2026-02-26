@@ -74,6 +74,16 @@ const mockDynamicsCompressorNode = () => ({
     reduction: 0,
 });
 
+const mockAnalyserNode = () => ({
+    ...mockAudioNode(),
+    fftSize: 2048,
+    frequencyBinCount: 1024,
+    getByteTimeDomainData: vi.fn((arr: Uint8Array) => arr.fill(128)),
+    getFloatTimeDomainData: vi.fn((arr: Float32Array) => arr.fill(0)),
+    getByteFrequencyData: vi.fn((arr: Uint8Array) => arr.fill(0)),
+    getFloatFrequencyData: vi.fn((arr: Float32Array) => arr.fill(0)),
+});
+
 const mockBufferSourceNode = () => ({
     ...mockAudioNode(),
     buffer: null,
@@ -116,6 +126,9 @@ class MockAudioContext {
     }
     createDynamicsCompressor() {
         return mockDynamicsCompressorNode();
+    }
+    createAnalyser() {
+        return mockAnalyserNode();
     }
     createBuffer(_channels: number, length: number, _sampleRate: number) {
         return {

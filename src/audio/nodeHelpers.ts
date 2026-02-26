@@ -23,6 +23,17 @@ export function setConvolverBuffer(node: ConvolverNode, buffer: AudioBuffer): vo
     node.buffer = buffer;
 }
 
+export function makeQuantizationCurve(bits: number): Float32Array<ArrayBuffer> {
+    const steps = Math.pow(2, Math.round(bits));
+    const n = 65536;
+    const curve = new Float32Array(new ArrayBuffer(n * 4));
+    for (let i = 0; i < n; i++) {
+        const x = (i * 2) / n - 1;
+        curve[i] = Math.round(x * steps) / steps;
+    }
+    return curve;
+}
+
 export function makeDistortionCurve(amount: number): Float32Array<ArrayBuffer> {
     const n_samples = 44100;
     const curve = new Float32Array(n_samples);

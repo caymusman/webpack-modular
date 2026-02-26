@@ -9,7 +9,7 @@ interface DelayProps {
 }
 
 function Delay({ module, parent }: DelayProps) {
-    const [, setDelayTime] = useParam(module.params.delayTime);
+    const [delayTime, setDelayTime] = useParam(module.params.delayTime);
 
     return (
         <div id="delayDiv">
@@ -20,6 +20,7 @@ function Delay({ module, parent }: DelayProps) {
                 max={5}
                 step={0.01}
                 setAudio={setDelayTime}
+                initialValue={delayTime}
                 midiLearnId={makeMIDILearnId(parent, 'delayTime')}
             ></Slider>
         </div>

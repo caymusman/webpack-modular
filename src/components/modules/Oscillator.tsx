@@ -19,7 +19,7 @@ function Oscillator({ module, parent, handleOutput }: OscillatorProps) {
     const [, setWaveType] = useParam(module.params.waveType);
     const [frequency, setFrequency] = useParam(module.params.frequency);
     const [LFO, setLFO] = useParam(module.params.lfo);
-    const [, setModDepth] = useParam(module.params.modDepth);
+    const [modDepth, setModDepth] = useParam(module.params.modDepth);
 
     const [min, setMin] = useState(LFO ? 0 : 20);
     const [max, setMax] = useState(LFO ? 21 : 20001);
@@ -93,7 +93,7 @@ function Oscillator({ module, parent, handleOutput }: OscillatorProps) {
                     </span>
                 </div>
             </div>
-            <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} step={1} setAudio={setModDepth} midiLearnId={makeMIDILearnId(parent, 'modDepth')} />
+            <Slider labelName="oscModGain" tooltipText="Mod Depth" min={0} max={300} step={1} setAudio={setModDepth} midiLearnId={makeMIDILearnId(parent, 'modDepth')} initialValue={modDepth} />
         </div>
     );
 }

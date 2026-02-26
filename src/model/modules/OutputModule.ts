@@ -13,9 +13,25 @@ export class OutputModule extends SynthModule {
         volume: new NumericParam(0.5, 0, 1, (node) => (node as GainNode).gain),
     };
 
+    private _analyser: AnalyserNode | null = null;
+
     createNode(ctx: AudioContext): AudioNode {
-        const node = createGainNode(ctx, this.params.volume.value);
-        node.connect(ctx.destination);
-        return node;
+        const gain = createGainNode(ctx, this.params.volume.value);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        gain.connect(analyser);
+        analyser.connect(ctx.destination);
+        this._analyser = analyser;
+        return gain;
+    }
+
+    getAnalyser(): AnalyserNode {
+        return this._analyser!;
+    }
+
+    dispose(): void {
+        try { this._analyser?.disconnect(); } catch { /* ignore */ }
+        this._analyser = null;
+        super.dispose();
     }
 }

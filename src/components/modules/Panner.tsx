@@ -9,7 +9,7 @@ interface PannerProps {
 }
 
 function Panner({ module, parent }: PannerProps) {
-    const [, setPan] = useParam(module.params.pan);
+    const [pan, setPan] = useParam(module.params.pan);
 
     return (
         <div>
@@ -20,6 +20,7 @@ function Panner({ module, parent }: PannerProps) {
                 max={1}
                 step={0.001}
                 setAudio={setPan}
+                initialValue={pan}
                 midiLearnId={makeMIDILearnId(parent, 'pan')}
             ></Slider>
         </div>
