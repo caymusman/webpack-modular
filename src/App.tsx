@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, createRef, ReactElement } fro
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import AlertBox from './components/AlertBox';
 import Area from './components/Area';
-import Cord, { cablePath } from './components/Cord';
+import Cord, { cablePath, cordColor } from './components/Cord';
 import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
@@ -1255,6 +1255,7 @@ export default function App() {
                     fromName={getModuleType(el.fromData.fromModID)}
                     toName={getModuleType(el.toData!.tomyKey)}
                     highlighted={el.id === cordDropTarget}
+                    color={cordColor(el.id)}
                 />
             );
         }
