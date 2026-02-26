@@ -69,6 +69,10 @@ export class SequencerModule extends SynthModule {
         this.seqOsc.connect(this.node);
         this.seqOsc.start();
 
+        // Output gain for bypass (mute)
+        this._outputGain = ctx.createGain();
+        this.node.connect(this._outputGain);
+
         return this.node;
     }
 

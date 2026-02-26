@@ -14,6 +14,11 @@ import { NoiseModule } from './modules/NoiseModule';
 import { LFOModule } from './modules/LFOModule';
 import { SequencerModule } from './modules/SequencerModule';
 import { OutputModule } from './modules/OutputModule';
+import { ScopeModule } from './modules/ScopeModule';
+import { MixerModule } from './modules/MixerModule';
+import { BitcrusherModule } from './modules/BitcrusherModule';
+import { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
+import { MIDINoteModule } from './modules/MIDINoteModule';
 
 export { SynthModule } from './SynthModule';
 export { Param, NumericParam, EnumParam, BoolParam } from './Param';
@@ -32,6 +37,11 @@ export { NoiseModule } from './modules/NoiseModule';
 export { LFOModule } from './modules/LFOModule';
 export { SequencerModule } from './modules/SequencerModule';
 export { OutputModule } from './modules/OutputModule';
+export { ScopeModule } from './modules/ScopeModule';
+export { MixerModule } from './modules/MixerModule';
+export { BitcrusherModule } from './modules/BitcrusherModule';
+export { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
+export { MIDINoteModule } from './modules/MIDINoteModule';
 
 export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean }> = [
     { type: 'Oscillator', inputOnly: true },
@@ -49,6 +59,11 @@ export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean }> = 
     { type: 'LFO', inputOnly: true },
     { type: 'Sequencer', inputOnly: true },
     { type: 'Output', inputOnly: false },
+    { type: 'Scope', inputOnly: false },
+    { type: 'Mixer', inputOnly: false },
+    { type: 'Bitcrusher', inputOnly: false },
+    { type: 'EnvelopeFollower', inputOnly: false },
+    { type: 'MIDINote', inputOnly: true },
 ];
 
 const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
@@ -67,6 +82,11 @@ const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
     LFO: () => new LFOModule(),
     Sequencer: () => new SequencerModule(),
     Output: () => new OutputModule(),
+    Scope: () => new ScopeModule(),
+    Mixer: () => new MixerModule(),
+    Bitcrusher: () => new BitcrusherModule(),
+    EnvelopeFollower: () => new EnvelopeFollowerModule(),
+    MIDINote: () => new MIDINoteModule(),
 };
 
 export function createModule(type: string): SynthModule {

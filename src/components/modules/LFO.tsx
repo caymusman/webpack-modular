@@ -10,8 +10,8 @@ interface LFOProps {
 
 function LFO({ module }: LFOProps) {
     const [, setWaveType] = useParam(module.params.waveType);
-    const [, setRate] = useParam(module.params.rate);
-    const [, setDepth] = useParam(module.params.depth);
+    const [rate, setRate] = useParam(module.params.rate);
+    const [depth, setDepth] = useParam(module.params.depth);
 
     return (
         <div className="lfoDiv">
@@ -25,7 +25,7 @@ function LFO({ module }: LFOProps) {
                 tooltipText="Rate (Hz)"
                 min={0.01}
                 max={21}
-                mid={1}
+                mid={rate}
                 onChange={setRate}
             />
             <Slider
@@ -35,6 +35,7 @@ function LFO({ module }: LFOProps) {
                 max={1000}
                 step={1}
                 setAudio={setDepth}
+                initialValue={depth}
             />
         </div>
     );

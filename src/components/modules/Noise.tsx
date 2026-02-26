@@ -8,7 +8,7 @@ interface NoiseProps {
 }
 
 function Noise({ module }: NoiseProps) {
-    const [, setGain] = useParam(module.params.gain);
+    const [gain, setGain] = useParam(module.params.gain);
 
     const handleTypeChange = (type: string) => {
         module.switchNoiseType(type as typeof module.params.noiseType.value);
@@ -28,6 +28,7 @@ function Noise({ module }: NoiseProps) {
                 max={1}
                 step={0.01}
                 setAudio={setGain}
+                initialValue={gain}
             />
         </div>
     );

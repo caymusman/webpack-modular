@@ -39,6 +39,10 @@ export class LFOModule extends SynthModule {
         this.lfoOsc.connect(this.node);
         this.lfoOsc.start();
 
+        // Output gain for bypass (mute)
+        this._outputGain = ctx.createGain();
+        this.node.connect(this._outputGain);
+
         return this.node;
     }
 

@@ -9,11 +9,13 @@ interface SliderProps {
     step: number;
     setAudio: (val: number) => void;
     midiLearnId?: string;
+    initialValue?: number;
 }
 
-function Slider({ labelName, tooltipText, min, max, step, setAudio, midiLearnId }: SliderProps) {
-    const [num, setNum] = useState<string | number>((max + min) / 2);
-    const [val, setVal] = useState<string | number>((max + min) / 2);
+function Slider({ labelName, tooltipText, min, max, step, setAudio, midiLearnId, initialValue }: SliderProps) {
+    const defaultVal = initialValue ?? (max + min) / 2;
+    const [num, setNum] = useState<string | number>(defaultVal);
+    const [val, setVal] = useState<string | number>(defaultVal);
     const { learnMode, armedControl, armControl, isMapped } = useMIDILearn();
 
     const isArmed = learnMode && armedControl?.midiLearnId === midiLearnId;

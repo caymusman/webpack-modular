@@ -70,6 +70,10 @@ export class NoiseModule extends SynthModule {
         this.noiseSource = buildNoiseBuffer(ctx, this.params.noiseType.value);
         this.noiseSource.connect(this.node);
 
+        // Output gain for bypass (mute)
+        this._outputGain = ctx.createGain();
+        this.node.connect(this._outputGain);
+
         return this.node;
     }
 

@@ -10,7 +10,7 @@ interface DistortionProps {
 }
 
 function Distortion({ module, parent }: DistortionProps) {
-    const [, setCurve] = useParam(module.params.curve);
+    const [curve, setCurve] = useParam(module.params.curve);
     const [, setOversample] = useParam(module.params.oversample);
 
     return (
@@ -23,6 +23,7 @@ function Distortion({ module, parent }: DistortionProps) {
                 step={0.1}
                 setAudio={setCurve}
                 midiLearnId={makeMIDILearnId(parent, 'curve')}
+                initialValue={curve}
             ></Slider>
             <Selector
                 id="distortionSelector"

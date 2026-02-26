@@ -13,9 +13,9 @@ interface FilterProps {
 
 function Filter({ module, parent }: FilterProps) {
     const [, setFilterType] = useParam(module.params.filterType);
-    const [, setFreq] = useParam(module.params.frequency);
-    const [, setQ] = useParam(module.params.q);
-    const [, setGain] = useParam(module.params.gain);
+    const [frequency, setFreq] = useParam(module.params.frequency);
+    const [q, setQ] = useParam(module.params.q);
+    const [gain, setGain] = useParam(module.params.gain);
 
     const filterTypes = ['lowpass', 'highpass', 'bandpass', 'lowshelf', 'highshelf', 'peaking', 'notch', 'allpass'];
     return (
@@ -26,7 +26,7 @@ function Filter({ module, parent }: FilterProps) {
                     values={filterTypes}
                     handleClick={(v: string) => setFilterType(v as typeof module.params.filterType.value)}
                 />
-                <Dial min={0} max={1001} name="Q" onChange={setQ} midiLearnId={makeMIDILearnId(parent, 'q')} />
+                <Dial min={0} max={1001} name="Q" onChange={setQ} midiLearnId={makeMIDILearnId(parent, 'q')} initialValue={q} />
             </div>
             <Slider
                 labelName="filterGain"
@@ -36,13 +36,14 @@ function Filter({ module, parent }: FilterProps) {
                 step={0.01}
                 setAudio={setGain}
                 midiLearnId={makeMIDILearnId(parent, 'gain')}
+                initialValue={gain}
             />
             <LogSlider
                 labelName="filterFreq"
                 tooltipText="Filter Frequency"
                 min={0}
                 max={20001}
-                mid={440}
+                mid={frequency}
                 onChange={setFreq}
                 midiLearnId={makeMIDILearnId(parent, 'frequency')}
             />

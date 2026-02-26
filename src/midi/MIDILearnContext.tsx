@@ -172,10 +172,25 @@ export function MIDILearnProvider({ children }: MIDILearnProviderProps) {
         []
     );
 
+    const noteDispatchHandler = useCallback<MIDIMessageHandler>((event) => {
+        const data = event.data;
+        if (!data || data.length < 3) return;
+        const type = data[0] & 0xf0;
+        if (type === 0x90 || type === 0x80) {
+            window.dispatchEvent(new CustomEvent('midi-note', {
+                detail: { note: data[1], velocity: data[2], on: type === 0x90 && data[2] > 0 }
+            }));
+        }
+    }, []);
+
     useEffect(() => {
         addHandler(learnHandler);
-        return () => removeHandler(learnHandler);
-    }, [addHandler, removeHandler, learnHandler]);
+        addHandler(noteDispatchHandler);
+        return () => {
+            removeHandler(learnHandler);
+            removeHandler(noteDispatchHandler);
+        };
+    }, [addHandler, removeHandler, learnHandler, noteDispatchHandler]);
 
     return (
         <MIDILearnContext.Provider
