@@ -34,8 +34,6 @@ export default function ModulePalette({ onAdd, onClose, audioIn }: ModulePalette
 
     useEffect(() => { inputRef.current?.focus(); }, []);
 
-    useEffect(() => { setActiveIndex(0); }, [query]);
-
     useEffect(() => {
         const activeItem = document.getElementById(`palette-item-${navigableItems[activeIndex]?.type}`);
         activeItem?.scrollIntoView?.({ block: 'nearest' });
@@ -130,7 +128,7 @@ export default function ModulePalette({ onAdd, onClose, audioIn }: ModulePalette
                 type="text"
                 placeholder="Search modules..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
                 onKeyDown={handleKeyDown}
                 aria-label="Search modules"
                 aria-autocomplete="list"
