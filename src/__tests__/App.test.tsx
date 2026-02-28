@@ -49,7 +49,7 @@ describe('App', () => {
         expect(names).toContain('Delay');
         expect(names).toContain('Distortion');
         expect(names).toContain('Reverb');
-        expect(names).toContain('AudioInput');
+        expect(names).toContain('Audio Input');
         expect(names).toContain('Recorder');
         expect(names).toContain('Compressor');
         expect(names).toContain('Noise');
@@ -57,10 +57,9 @@ describe('App', () => {
         expect(names).toContain('Sequencer');
         expect(names).toContain('Output');
         expect(names).toContain('Scope');
-        expect(names).toContain('Mixer');
         expect(names).toContain('Bitcrusher');
-        expect(names).toContain('EnvelopeFollower');
-        expect(names).toContain('MIDINote');
+        expect(names).toContain('Envelope Follower');
+        expect(names).toContain('MIDI Note');
     });
 
     test('Output appears in palette', () => {
@@ -814,12 +813,6 @@ describe('New modules in palette', () => {
         expect(screen.getByRole('option', { name: 'Scope' })).toBeTruthy();
     });
 
-    test('Mixer appears in palette', () => {
-        renderWithAudioContext(<App />);
-        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
-        expect(screen.getByRole('option', { name: 'Mixer' })).toBeTruthy();
-    });
-
     test('Bitcrusher appears in palette', () => {
         renderWithAudioContext(<App />);
         fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
@@ -829,25 +822,19 @@ describe('New modules in palette', () => {
     test('EnvelopeFollower appears in palette', () => {
         renderWithAudioContext(<App />);
         fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
-        expect(screen.getByRole('option', { name: 'EnvelopeFollower' })).toBeTruthy();
+        expect(screen.getByRole('option', { name: 'Envelope Follower' })).toBeTruthy();
     });
 
     test('MIDINote appears in palette', () => {
         renderWithAudioContext(<App />);
         fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
-        expect(screen.getByRole('option', { name: 'MIDINote' })).toBeTruthy();
+        expect(screen.getByRole('option', { name: 'MIDI Note' })).toBeTruthy();
     });
 
     test('adding Scope creates a module', () => {
         const { container } = renderWithAudioContext(<App />);
         addModule('Scope');
         expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
-    });
-
-    test('adding Mixer creates a module with level slider', () => {
-        renderWithAudioContext(<App />);
-        addModule('Mixer');
-        expect(screen.getByRole('slider', { name: 'Mixer level' })).toBeTruthy();
     });
 
     test('adding Bitcrusher creates a module with bit depth slider', () => {
@@ -858,8 +845,8 @@ describe('New modules in palette', () => {
 
     test('MIDINote module shows waiting state', () => {
         renderWithAudioContext(<App />);
-        addModule('MIDINote');
-        expect(screen.getByText('— waiting —')).toBeTruthy();
+        addModule('MIDI Note');
+        expect(screen.getByText('Play a MIDI note')).toBeTruthy();
     });
 });
 

@@ -12,18 +12,25 @@ function midiToNoteName(midi: number): string {
     return NOTE_NAMES[midi % 12] + octave;
 }
 
+function midiToHz(midi: number): number {
+    return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
 export default function MIDINoteView({ module }: MIDINoteViewProps) {
     const [currentNote, setCurrentNote] = useState<number | null>(null);
+    const [isActive, setIsActive] = useState(false);
 
     useEffect(() => {
         const handler = (e: Event) => {
             const { note, on } = (e as CustomEvent<{ note: number; velocity: number; on: boolean }>).detail;
             if (on) {
-                const hz = 440 * Math.pow(2, (note - 69) / 12);
+                const hz = midiToHz(note);
                 module.setFrequency(hz);
                 setCurrentNote(note);
+                setIsActive(true);
             } else {
-                setCurrentNote(null);
+                setIsActive(false);
+                // Frequency holds at last played note — keep currentNote for display
             }
         };
         window.addEventListener('midi-note', handler);
@@ -32,16 +39,18 @@ export default function MIDINoteView({ module }: MIDINoteViewProps) {
 
     return (
         <div className="midiNoteDiv">
-            {currentNote !== null ? (
-                <>
-                    <div className="midiNoteDiv__note">{midiToNoteName(currentNote)}</div>
-                    <div className="midiNoteDiv__hz">
-                        {(440 * Math.pow(2, (currentNote - 69) / 12)).toFixed(2)} Hz
-                    </div>
-                </>
+            {currentNote === null ? (
+                <div className="midiNoteDiv__waiting">Play a MIDI note</div>
             ) : (
-                <div className="midiNoteDiv__waiting">— waiting —</div>
+                <>
+                    <div className={`midiNoteDiv__note${isActive ? '' : ' midiNoteDiv__note--held'}`}>
+                        {midiToNoteName(currentNote)}
+                        {!isActive && <span className="midiNoteDiv__heldBadge">held</span>}
+                    </div>
+                    <div className="midiNoteDiv__hz">{midiToHz(currentNote).toFixed(2)} Hz</div>
+                </>
             )}
+            <div className="midiNoteDiv__hint">connect output → osc freq / filter cutoff</div>
         </div>
     );
 }

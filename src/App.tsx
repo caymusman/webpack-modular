@@ -7,7 +7,7 @@ import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
 import { getCenterPoint } from './utils/centerPoint';
-import { createModule } from './model/index';
+import { createModule, MODULE_LIST } from './model/index';
 import { useAudioContext } from './audio/AudioContextProvider';
 import { useMIDILearn } from './midi/MIDILearnContext';
 import { useMIDIPlayback } from './midi/useMIDIPlayback';
@@ -292,7 +292,7 @@ export default function App() {
             const newRecord: ModuleRecord = {
                 myKey: childKey,
                 filling: type,
-                name: type,
+                name: MODULE_LIST.find((m) => m.type === type)?.label ?? type,
                 inputOnly: inputOnly,
                 position: { x: cx - 60, y: cy - 60 },
                 module: mod,

@@ -15,7 +15,6 @@ import LFO from './modules/LFO';
 import Sequencer from './modules/Sequencer';
 import OutputView from './modules/OutputView';
 import ScopeView from './modules/ScopeView';
-import MixerView from './modules/MixerView';
 import BitcrusherView from './modules/BitcrusherView';
 import EnvelopeFollowerView from './modules/EnvelopeFollowerView';
 import MIDINoteView from './modules/MIDINoteView';
@@ -38,7 +37,6 @@ import type { LFOModule } from '../model/modules/LFOModule';
 import type { SequencerModule } from '../model/modules/SequencerModule';
 import type { OutputModule } from '../model/modules/OutputModule';
 import type { ScopeModule } from '../model/modules/ScopeModule';
-import type { MixerModule } from '../model/modules/MixerModule';
 import type { BitcrusherModule } from '../model/modules/BitcrusherModule';
 import type { EnvelopeFollowerModule } from '../model/modules/EnvelopeFollowerModule';
 import type { MIDINoteModule } from '../model/modules/MIDINoteModule';
@@ -303,8 +301,6 @@ const startNudgeLoop = useCallback(() => {
                 return <OutputView module={module as OutputModule} />;
             case 'Scope':
                 return <ScopeView module={module as ScopeModule} />;
-            case 'Mixer':
-                return <MixerView module={module as MixerModule} parent={myKey} handleOutput={handleOutput} />;
             case 'Bitcrusher':
                 return <BitcrusherView module={module as BitcrusherModule} parent={myKey} />;
             case 'EnvelopeFollower':
