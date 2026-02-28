@@ -339,8 +339,39 @@ body {
             overflow-y: auto;
         }
 
+        &__group {
+            list-style: none;
+        }
+
+        &__groupHeader {
+            width: 100%;
+            padding: 6px 12px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.35);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+
+            &:hover {
+                color: rgba(255, 255, 255, 0.6);
+            }
+        }
+
+        &__groupList {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
         &__item {
-            padding: 7px 12px;
+            padding: 6px 12px 6px 18px;
             font-size: 12px;
             color: rgba(255, 255, 255, 0.8);
             cursor: pointer;
@@ -2001,12 +2032,31 @@ button {
         font-size: 18px;
         font-weight: bold;
         color: $dark;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &--held {
+            opacity: 0.45;
+        }
+    }
+
+    &__heldBadge {
+        font-size: 9px;
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 3px;
+        padding: 1px 4px;
+        opacity: 0.7;
     }
 
     &__hz {
         font-size: 11px;
         color: $dark;
         opacity: 0.7;
+        font-variant-numeric: tabular-nums;
     }
 
     &__waiting {
@@ -2014,14 +2064,15 @@ button {
         color: $dark;
         opacity: 0.45;
         font-style: italic;
+        text-align: center;
     }
-}
 
-// ─── Mixer Module ────────────────────────────────────────────────────────────
-
-.mixerHint {
-    font-size: 10px;
-    color: $dark;
-    opacity: 0.5;
-    font-style: italic;
+    &__hint {
+        font-size: 9px;
+        color: $dark;
+        opacity: 0.35;
+        text-align: center;
+        margin-top: 2px;
+        line-height: 1.3;
+    }
 }
