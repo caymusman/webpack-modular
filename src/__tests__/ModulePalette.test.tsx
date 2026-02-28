@@ -19,7 +19,7 @@ describe('ModulePalette', () => {
     test('renders all modules when query is empty', () => {
         renderPalette();
         const items = screen.getAllByRole('option');
-        expect(items.length).toBe(15);
+        expect(items.length).toBe(19);
         expect(screen.getByText('Oscillator')).toBeTruthy();
         expect(screen.getByText('Gain')).toBeTruthy();
         expect(screen.getByText('Recorder')).toBeTruthy();
@@ -52,7 +52,7 @@ describe('ModulePalette', () => {
 
     test('AudioInput item is disabled when audioIn is true', () => {
         const { onAdd } = renderPalette({ audioIn: true });
-        const audioInputItem = screen.getByText('AudioInput');
+        const audioInputItem = screen.getByText('Audio Input');
         expect(audioInputItem.closest('li')?.getAttribute('aria-disabled')).toBe('true');
         fireEvent.click(audioInputItem);
         expect(onAdd).not.toHaveBeenCalled();
@@ -78,9 +78,9 @@ describe('ModulePalette', () => {
         renderPalette();
         const input = screen.getByLabelText('Search modules');
         fireEvent.keyDown(input, { key: 'ArrowDown' });
-        // Second item (Gain) should now be active
-        const gainItem = screen.getByText('Gain').closest('li');
-        expect(gainItem?.classList.contains('modulePalette__item--active')).toBe(true);
+        // Second item in Sources group is Audio Input (MODULE_LIST order: Oscillator, AudioInput, Noise...)
+        const audioInputItem = screen.getByText('Audio Input').closest('li');
+        expect(audioInputItem?.classList.contains('modulePalette__item--active')).toBe(true);
     });
 
     test('ArrowUp moves active index up but not below 0', () => {
@@ -96,7 +96,7 @@ describe('ModulePalette', () => {
         const { onAdd } = renderPalette({ audioIn: true });
         const input = screen.getByLabelText('Search modules');
         // Filter to AudioInput only
-        fireEvent.change(input, { target: { value: 'AudioInput' } });
+        fireEvent.change(input, { target: { value: 'Audio Input' } });
         fireEvent.keyDown(input, { key: 'Enter' });
         expect(onAdd).not.toHaveBeenCalled();
     });

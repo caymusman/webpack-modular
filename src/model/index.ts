@@ -14,6 +14,10 @@ import { NoiseModule } from './modules/NoiseModule';
 import { LFOModule } from './modules/LFOModule';
 import { SequencerModule } from './modules/SequencerModule';
 import { OutputModule } from './modules/OutputModule';
+import { ScopeModule } from './modules/ScopeModule';
+import { BitcrusherModule } from './modules/BitcrusherModule';
+import { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
+import { MIDINoteModule } from './modules/MIDINoteModule';
 
 export { SynthModule } from './SynthModule';
 export { Param, NumericParam, EnumParam, BoolParam } from './Param';
@@ -32,23 +36,38 @@ export { NoiseModule } from './modules/NoiseModule';
 export { LFOModule } from './modules/LFOModule';
 export { SequencerModule } from './modules/SequencerModule';
 export { OutputModule } from './modules/OutputModule';
+export { ScopeModule } from './modules/ScopeModule';
+export { BitcrusherModule } from './modules/BitcrusherModule';
+export { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
+export { MIDINoteModule } from './modules/MIDINoteModule';
 
-export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean }> = [
-    { type: 'Oscillator', inputOnly: true },
-    { type: 'Gain', inputOnly: false },
-    { type: 'Filter', inputOnly: false },
-    { type: 'Panner', inputOnly: false },
-    { type: 'ADSR', inputOnly: false },
-    { type: 'Delay', inputOnly: false },
-    { type: 'Distortion', inputOnly: false },
-    { type: 'Reverb', inputOnly: false },
-    { type: 'AudioInput', inputOnly: true },
-    { type: 'Recorder', inputOnly: false },
-    { type: 'Compressor', inputOnly: false },
-    { type: 'Noise', inputOnly: true },
-    { type: 'LFO', inputOnly: true },
-    { type: 'Sequencer', inputOnly: true },
-    { type: 'Output', inputOnly: false },
+export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean; label: string }> = [
+    { type: 'Oscillator',        inputOnly: true,  label: 'Oscillator' },
+    { type: 'Gain',              inputOnly: false, label: 'Gain' },
+    { type: 'Filter',            inputOnly: false, label: 'Filter' },
+    { type: 'Panner',            inputOnly: false, label: 'Panner' },
+    { type: 'ADSR',              inputOnly: false, label: 'ADSR' },
+    { type: 'Delay',             inputOnly: false, label: 'Delay' },
+    { type: 'Distortion',        inputOnly: false, label: 'Distortion' },
+    { type: 'Reverb',            inputOnly: false, label: 'Reverb' },
+    { type: 'AudioInput',        inputOnly: true,  label: 'Audio Input' },
+    { type: 'Recorder',          inputOnly: false, label: 'Recorder' },
+    { type: 'Compressor',        inputOnly: false, label: 'Compressor' },
+    { type: 'Noise',             inputOnly: true,  label: 'Noise' },
+    { type: 'LFO',               inputOnly: true,  label: 'LFO' },
+    { type: 'Sequencer',         inputOnly: true,  label: 'Sequencer' },
+    { type: 'Output',            inputOnly: false, label: 'Output' },
+    { type: 'Scope',             inputOnly: false, label: 'Scope' },
+    { type: 'Bitcrusher',        inputOnly: false, label: 'Bitcrusher' },
+    { type: 'EnvelopeFollower',  inputOnly: false, label: 'Envelope Follower' },
+    { type: 'MIDINote',          inputOnly: true,  label: 'MIDI Note' },
+];
+
+export const MODULE_GROUPS: ReadonlyArray<{ label: string; types: string[] }> = [
+    { label: 'Sources',    types: ['Oscillator', 'Noise', 'LFO', 'Sequencer', 'MIDINote', 'AudioInput'] },
+    { label: 'Effects',    types: ['Gain', 'Filter', 'Panner', 'Delay', 'Distortion', 'Reverb', 'Compressor', 'Bitcrusher'] },
+    { label: 'Modulators', types: ['ADSR', 'EnvelopeFollower'] },
+    { label: 'Utilities',  types: ['Scope', 'Recorder', 'Output'] },
 ];
 
 const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
@@ -67,6 +86,10 @@ const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
     LFO: () => new LFOModule(),
     Sequencer: () => new SequencerModule(),
     Output: () => new OutputModule(),
+    Scope: () => new ScopeModule(),
+    Bitcrusher: () => new BitcrusherModule(),
+    EnvelopeFollower: () => new EnvelopeFollowerModule(),
+    MIDINote: () => new MIDINoteModule(),
 };
 
 export function createModule(type: string): SynthModule {

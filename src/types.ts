@@ -87,3 +87,8 @@ export interface Preset {
     connections: SerializedConnection[];
     midiMappings?: { mappings: MIDIMapping[] };
 }
+
+export interface HistoryEntry {
+    modules: SerializedModule[];
+    connections: SerializedConnection[];
+}

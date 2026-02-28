@@ -335,12 +335,52 @@ body {
             list-style: none;
             margin: 0;
             padding: 4px 0;
-            max-height: 280px;
+            max-height: 360px;
             overflow-y: auto;
         }
 
+        &__group {
+            list-style: none;
+        }
+
+        &__groupHeader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 5px 10px 4px;
+            background: none;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            text-align: left;
+
+            &:first-child {
+                border-top: none;
+            }
+
+            &:hover {
+                color: rgba(255, 255, 255, 0.65);
+            }
+
+            .fa {
+                font-size: 9px;
+                opacity: 0.6;
+            }
+        }
+
+        &__groupList {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 4px;
+        }
+
         &__item {
-            padding: 7px 12px;
+            padding: 6px 12px 6px 18px;
             font-size: 12px;
             color: rgba(255, 255, 255, 0.8);
             cursor: pointer;
@@ -1737,3 +1777,298 @@ button {
     pointer-events: none;
     line-height: 1;
 }
+
+// ─── Multi-select glow ──────────────────────────────────────────────────────
+
+.moduleDiv--selected {
+    outline: 2px solid #63b3ed;
+    box-shadow: 0 0 12px rgba(99, 179, 237, 0.6);
+}
+
+// ─── Info / Shortcuts Dropdown ───────────────────────────────────────────────
+
+.infoBtn__wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .infoDropdown {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s, visibility 0.15s;
+    }
+
+    &:hover .infoDropdown {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+.infoDropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 10000;
+    background: #232323;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px 0 6px;
+    min-width: 280px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    color: #e0e0e0;
+    font-size: 12px;
+    user-select: none;
+
+    &__section {
+        padding: 0 12px 6px;
+
+        & + & {
+            border-top: 1px solid #3a3a3a;
+            padding-top: 6px;
+        }
+    }
+
+    &__heading {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #888;
+        margin-bottom: 4px;
+    }
+
+    &__table {
+        border-collapse: collapse;
+        width: 100%;
+
+        td {
+            padding: 2px 4px;
+            vertical-align: middle;
+
+            &:first-child {
+                white-space: nowrap;
+                padding-right: 12px;
+            }
+        }
+
+        kbd {
+            display: inline-block;
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 10px;
+            font-family: inherit;
+            color: #ccc;
+            line-height: 1.4;
+        }
+    }
+}
+
+// ─── Bypass ──────────────────────────────────────────────────────────────────
+
+.bypassBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 5px;
+    line-height: 1;
+    width: auto;
+
+    .fa-power-off {
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 11px;
+        transition: color 0.2s;
+    }
+
+    &:hover .fa-power-off {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    &--active .fa-power-off {
+        color: #f6ad55;
+        filter: drop-shadow(0 0 4px rgba(246, 173, 85, 0.7));
+    }
+}
+
+.moduleDiv--bypassed {
+    opacity: 0.6;
+
+    header {
+        background: repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 4px,
+            rgba(246, 173, 85, 0.15) 4px,
+            rgba(246, 173, 85, 0.15) 8px
+        );
+    }
+}
+
+.rubber-band {
+    position: absolute;
+    border: 1.5px dashed #0af;
+    background: rgba(0, 170, 255, 0.08);
+    pointer-events: none;
+    z-index: 9999;
+}
+
+// ─── VU Meter ───────────────────────────────────────────────────────────────
+
+.vuMeter {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    position: relative;
+    overflow: visible;
+
+    &__bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.05s linear, background 0.1s;
+    }
+
+    &__peak {
+        position: absolute;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        border-radius: 1px;
+        transform: translateX(-1px);
+    }
+}
+
+// ─── Scope Module ───────────────────────────────────────────────────────────
+
+.scopeDiv {
+    padding: 4px;
+
+    canvas {
+        display: block;
+        border-radius: 4px;
+        background: #0d0d0d;
+    }
+}
+
+.dragDiv:has(.scopeDiv) {
+    width: 16vw;
+    min-width: 220px;
+}
+
+// ─── Bitcrusher Module ──────────────────────────────────────────────────────
+
+.bitcrusherDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+
+    &__label {
+        font-size: 11px;
+        color: $dark;
+        opacity: 0.7;
+    }
+
+    &__value {
+        font-size: 12px;
+        font-weight: bold;
+        color: $dark;
+    }
+}
+
+// ─── Envelope Follower Module ────────────────────────────────────────────────
+
+.envFollowerDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+
+    &__meter {
+        width: 100%;
+        height: 8px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    &__bar {
+        height: 100%;
+        background: #38a169;
+        border-radius: 4px;
+        transition: width 0.05s linear;
+    }
+
+    &__cv {
+        font-size: 11px;
+        color: $dark;
+        opacity: 0.75;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// ─── MIDI Note Module ───────────────────────────────────────────────────────
+
+.midiNoteDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+
+    &__note {
+        font-size: 18px;
+        font-weight: bold;
+        color: $dark;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &--held {
+            opacity: 0.45;
+        }
+    }
+
+    &__heldBadge {
+        font-size: 9px;
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 3px;
+        padding: 1px 4px;
+        opacity: 0.7;
+    }
+
+    &__hz {
+        font-size: 11px;
+        color: $dark;
+        opacity: 0.7;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__waiting {
+        font-size: 12px;
+        color: $dark;
+        opacity: 0.45;
+        font-style: italic;
+        text-align: center;
+    }
+
+    &__hint {
+        font-size: 9px;
+        color: $dark;
+        opacity: 0.35;
+        text-align: center;
+        margin-top: 2px;
+        line-height: 1.3;
+    }
+}
+

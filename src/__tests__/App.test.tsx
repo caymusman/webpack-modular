@@ -49,13 +49,17 @@ describe('App', () => {
         expect(names).toContain('Delay');
         expect(names).toContain('Distortion');
         expect(names).toContain('Reverb');
-        expect(names).toContain('AudioInput');
+        expect(names).toContain('Audio Input');
         expect(names).toContain('Recorder');
         expect(names).toContain('Compressor');
         expect(names).toContain('Noise');
         expect(names).toContain('LFO');
         expect(names).toContain('Sequencer');
         expect(names).toContain('Output');
+        expect(names).toContain('Scope');
+        expect(names).toContain('Bitcrusher');
+        expect(names).toContain('Envelope Follower');
+        expect(names).toContain('MIDI Note');
     });
 
     test('Output appears in palette', () => {
@@ -799,5 +803,111 @@ describe('MIDI Learn button and keyboard shortcut', () => {
         renderWithAudioContext(<App />);
         fireEvent.keyDown(document.body, { key: 'm', ctrlKey: true });
         expect(screen.getByRole('button', { name: 'Enter MIDI learn mode (M)' })).toBeTruthy();
+    });
+});
+
+describe('New modules in palette', () => {
+    test('Scope appears in palette', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        expect(screen.getByRole('option', { name: 'Scope' })).toBeTruthy();
+    });
+
+    test('Bitcrusher appears in palette', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        expect(screen.getByRole('option', { name: 'Bitcrusher' })).toBeTruthy();
+    });
+
+    test('EnvelopeFollower appears in palette', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        expect(screen.getByRole('option', { name: 'Envelope Follower' })).toBeTruthy();
+    });
+
+    test('MIDINote appears in palette', () => {
+        renderWithAudioContext(<App />);
+        fireEvent.click(screen.getByRole('button', { name: 'Add module (N)' }));
+        expect(screen.getByRole('option', { name: 'MIDI Note' })).toBeTruthy();
+    });
+
+    test('adding Scope creates a module', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Scope');
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+
+    test('adding Bitcrusher creates a module with bit depth slider', () => {
+        renderWithAudioContext(<App />);
+        addModule('Bitcrusher');
+        expect(screen.getByRole('slider', { name: 'Bit depth' })).toBeTruthy();
+    });
+
+    test('MIDINote module shows waiting state', () => {
+        renderWithAudioContext(<App />);
+        addModule('MIDI Note');
+        expect(screen.getByText('Play a MIDI note')).toBeTruthy();
+    });
+});
+
+describe('Undo / Redo', () => {
+    test('Ctrl+Z after adding a module removes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
+    });
+
+    test('Ctrl+Y after undo re-adds the module', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+    });
+});
+
+describe('Multi-select', () => {
+    test('Ctrl+A selects all modules (adds moduleDiv--selected class)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        addModule('Filter');
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'a', ctrlKey: true });
+        });
+
+        const selected = container.querySelectorAll('.moduleDiv--selected');
+        expect(selected.length).toBe(2);
+    });
+
+    test('Escape clears selection', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'a', ctrlKey: true });
+        });
+        expect(container.querySelectorAll('.moduleDiv--selected').length).toBe(1);
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'Escape' });
+        });
+        expect(container.querySelectorAll('.moduleDiv--selected').length).toBe(0);
     });
 });
