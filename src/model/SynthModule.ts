@@ -135,6 +135,7 @@ export abstract class SynthModule {
         for (const [key, param] of Object.entries(this.params)) {
             data[key] = param.serialize();
         }
+        if (this.bypassed) data._bypassed = true;
         return data;
     }
 
@@ -144,5 +145,6 @@ export abstract class SynthModule {
                 param.deserialize(data[key]);
             }
         }
+        if (data._bypassed === true) this.setBypass(true);
     }
 }

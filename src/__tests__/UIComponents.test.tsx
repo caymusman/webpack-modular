@@ -568,3 +568,38 @@ describe('Dial clamping and transforms (via Filter Q)', () => {
         expect(dialNum.value).toBe('100');
     });
 });
+
+describe('Selector initialValue prop (via Switch channel count)', () => {
+    // The Switch module passes initialValue={String(count)} to its Selector so that
+    // after a preset restore the selector display matches the deserialized param value.
+
+    test('Switch selector shows "2" by default', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        const display = selector!.querySelector('span[role="option"]');
+        expect(display?.textContent).toBe('2');
+    });
+
+    test('Switch selector options are 2, 3, and 4', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        const options = selector!.querySelectorAll('.selectorVal');
+        const values = Array.from(options).map((o) => o.textContent);
+        expect(values).toEqual(['2', '3', '4']);
+    });
+
+    test('clicking "3" updates display and renders 3 channel docks', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        const threeOption = Array.from(selector!.querySelectorAll('.selectorVal')).find(
+            (el) => el.textContent === '3'
+        );
+        fireEvent.click(threeOption!);
+        const display = selector!.querySelector('span[role="option"]');
+        expect(display?.textContent).toBe('3');
+        expect(container.querySelectorAll('.switch__ch-top-dock').length).toBe(3);
+    });
+});

@@ -18,6 +18,8 @@ import ScopeView from './modules/ScopeView';
 import BitcrusherView from './modules/BitcrusherView';
 import EnvelopeFollowerView from './modules/EnvelopeFollowerView';
 import MIDINoteView from './modules/MIDINoteView';
+import SwitchView from './modules/Switch';
+import AudioClipView from './modules/AudioClip';
 import { getCenterPointFromEvent } from '../utils/centerPoint';
 import { CordFromData, CordToData, CanvasTransform } from '../types';
 import type { SynthModule } from '../model/SynthModule';
@@ -40,6 +42,8 @@ import type { ScopeModule } from '../model/modules/ScopeModule';
 import type { BitcrusherModule } from '../model/modules/BitcrusherModule';
 import type { EnvelopeFollowerModule } from '../model/modules/EnvelopeFollowerModule';
 import type { MIDINoteModule } from '../model/modules/MIDINoteModule';
+import type { SwitchModule } from '../model/modules/SwitchModule';
+import type { AudioClipModule } from '../model/modules/AudioClipModule';
 
 interface AreaProps {
     myKey: string;
@@ -60,6 +64,7 @@ interface AreaProps {
     isSelected?: boolean;
     onSelect?: (key: string) => void;
     onDuplicate?: (key: string) => void;
+    onRemoveCords?: (tomyKeys: string[]) => void;
 }
 
 const FOCUSABLE_SELECTORS =
@@ -86,11 +91,12 @@ function Area({
     isSelected = false,
     onSelect,
     onDuplicate,
+    onRemoveCords,
 }: AreaProps) {
     const [closing, setClosing] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [localName, setLocalName] = useState(name);
-    const [bypassed, setBypassed] = useState(false);
+    const [bypassed, setBypassed] = useState(module.bypassed);
     const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const titleRef = useRef<HTMLElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -307,6 +313,10 @@ const startNudgeLoop = useCallback(() => {
                 return <EnvelopeFollowerView module={module as EnvelopeFollowerModule} parent={myKey} />;
             case 'MIDINote':
                 return <MIDINoteView module={module as MIDINoteModule} />;
+            case 'Switch':
+                return <SwitchView module={module as SwitchModule} parent={myKey} handleOutput={handleOutput} onRemoveCords={onRemoveCords} />;
+            case 'AudioClip':
+                return <AudioClipView module={module as AudioClipModule} handleClose={() => handleClose(myKey)} />;
             default:
                 return <div>Hahahahaha theres nothing here!</div>;
         }

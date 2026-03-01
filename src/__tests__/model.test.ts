@@ -14,6 +14,8 @@ import { CompressorModule } from '../model/modules/CompressorModule';
 import { NoiseModule } from '../model/modules/NoiseModule';
 import { LFOModule } from '../model/modules/LFOModule';
 import { SequencerModule } from '../model/modules/SequencerModule';
+import { SwitchModule } from '../model/modules/SwitchModule';
+import { AudioClipModule } from '../model/modules/AudioClipModule';
 
 describe('NumericParam', () => {
     test('stores and retrieves value', () => {
@@ -161,6 +163,8 @@ describe('createModule factory', () => {
             'Noise',
             'LFO',
             'Sequencer',
+            'Switch',
+            'AudioClip',
         ];
         types.forEach((type) => {
             const mod = createModule(type);
@@ -477,5 +481,438 @@ describe('ADSRModule triggerAttack / triggerRelease', () => {
     test('triggerRelease before init does not throw', () => {
         const m = new ADSRModule();
         expect(() => m.triggerRelease()).not.toThrow();
+    });
+});
+
+describe('SwitchModule', () => {
+    function makeInited() {
+        const m = new SwitchModule();
+        m.init(new AudioContext());
+        return m;
+    }
+
+    test('type is Switch and inputOnly is true', () => {
+        const m = new SwitchModule();
+        expect(m.type).toBe('Switch');
+        expect(m.inputOnly).toBe(true);
+    });
+
+    test('has channelCount, activeChannel, and rate params', () => {
+        const m = new SwitchModule();
+        expect(m.params.channelCount).toBeDefined();
+        expect(m.params.activeChannel).toBeDefined();
+        expect(m.params.rate).toBeDefined();
+        expect(m.params.channelCount.value).toBe(2);
+        expect(m.params.activeChannel.value).toBe(0);
+        expect(m.params.rate.value).toBe(0);
+    });
+
+    test('after init, allocates 4 channel gains', () => {
+        const m = makeInited();
+        expect(m.channelGains.length).toBe(4);
+    });
+
+    test('after init, channel 0 gain is initialized to 1 and others to 0', () => {
+        // createGainNode uses gain.gain.setValueAtTime (mock fn) not direct .value assignment
+        const m = makeInited();
+        expect(m.channelGains[0].gain.setValueAtTime).toHaveBeenCalledWith(1, expect.any(Number));
+        expect(m.channelGains[1].gain.setValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+        expect(m.channelGains[2].gain.setValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+        expect(m.channelGains[3].gain.setValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+    });
+
+    test('after init, getChannelGain(0) returns a GainNode', () => {
+        const m = makeInited();
+        const g = m.getChannelGain(0);
+        expect(g).toBeDefined();
+        expect(typeof g.connect).toBe('function');
+    });
+
+    test('getChannelGain returns different nodes for each index', () => {
+        const m = makeInited();
+        expect(m.getChannelGain(0)).not.toBe(m.getChannelGain(1));
+        expect(m.getChannelGain(1)).not.toBe(m.getChannelGain(2));
+    });
+
+    test('after init, getParamNode() returns a node', () => {
+        const m = makeInited();
+        const p = m.getParamNode();
+        expect(p).toBeDefined();
+    });
+
+    test('setActiveChannel updates activeChannel param', () => {
+        const m = makeInited();
+        m.setActiveChannel(1);
+        expect(m.params.activeChannel.value).toBe(1);
+    });
+
+    test('setActiveChannel clamps to channelCount - 1', () => {
+        const m = makeInited();
+        // count defaults to 2, so max valid channel is 1
+        m.setActiveChannel(5);
+        expect(m.params.activeChannel.value).toBe(1);
+    });
+
+    test('setActiveChannel clamps to 0 at minimum', () => {
+        const m = makeInited();
+        m.setActiveChannel(-3);
+        expect(m.params.activeChannel.value).toBe(0);
+    });
+
+    test('setActiveChannel ramps gain to 1 for selected channel, 0 for others', () => {
+        const m = makeInited();
+        m.params.channelCount.value = 3;
+        // Clear spy history from init so we only see the setActiveChannel calls
+        m.channelGains.forEach((g) =>
+            (g.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mockClear()
+        );
+        m.setActiveChannel(2);
+        expect(m.channelGains[0].gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+        expect(m.channelGains[1].gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+        expect(m.channelGains[2].gain.linearRampToValueAtTime).toHaveBeenCalledWith(1, expect.any(Number));
+    });
+
+    test('setActiveChannel does not mutate param when already at that channel', () => {
+        const m = makeInited();
+        m.setActiveChannel(0);
+        const fn = vi.fn();
+        m.params.activeChannel.subscribe(fn);
+        m.setActiveChannel(0); // same channel — no param change expected
+        expect(fn).not.toHaveBeenCalled();
+    });
+
+    test('dispose clears the poll interval', () => {
+        vi.useFakeTimers();
+        const clearSpy = vi.spyOn(global, 'clearInterval');
+        const m = makeInited();
+        m.dispose();
+        expect(clearSpy).toHaveBeenCalled();
+        vi.useRealTimers();
+        clearSpy.mockRestore();
+    });
+
+    test('dispose clears channelGains array', () => {
+        const m = makeInited();
+        m.dispose();
+        expect(m.channelGains.length).toBe(0);
+    });
+
+    test('rate param defaults to 0 (auto-cycle off)', () => {
+        const m = new SwitchModule();
+        expect(m.params.rate.value).toBe(0);
+        expect(m.params.rate.min).toBe(0);
+        expect(m.params.rate.max).toBe(20);
+    });
+
+    test('auto-rate cycling advances channel after interval ticks', () => {
+        vi.useFakeTimers();
+        const m = makeInited();
+        m.params.channelCount.value = 2;
+        m.params.rate.value = 20; // 20 Hz → cycles every 50ms
+
+        // Each poll interval is 50ms; at 20Hz the accumulator hits 1.0 after 1s
+        // Advance 1100ms (22 ticks × 50ms) to ensure at least one cycle
+        vi.advanceTimersByTime(1100);
+
+        // Channel should have advanced from 0
+        expect(m.params.activeChannel.value).toBe(1);
+        vi.useRealTimers();
+        m.dispose();
+    });
+
+    test('serialize / deserialize round-trip preserves channelCount and activeChannel', () => {
+        const m1 = new SwitchModule();
+        m1.params.channelCount.value = 3;
+        m1.params.activeChannel.value = 2;
+        const data = m1.serialize();
+        const m2 = new SwitchModule();
+        m2.deserialize(data);
+        expect(m2.params.channelCount.value).toBe(3);
+        expect(m2.params.activeChannel.value).toBe(2);
+    });
+
+    test('serialize / deserialize round-trip preserves rate', () => {
+        const m1 = new SwitchModule();
+        m1.params.rate.value = 5;
+        const data = m1.serialize();
+        const m2 = new SwitchModule();
+        m2.deserialize(data);
+        expect(m2.params.rate.value).toBe(5);
+    });
+});
+
+describe('AudioClipModule', () => {
+    function makeInited() {
+        const m = new AudioClipModule();
+        m.init(new AudioContext());
+        return m;
+    }
+
+    function makeMockBuffer(duration = 1): AudioBuffer {
+        const sampleRate = 44100;
+        return new AudioContext().createBuffer(1, Math.floor(sampleRate * duration), sampleRate) as unknown as AudioBuffer;
+    }
+
+    test('type is AudioClip and inputOnly is true', () => {
+        const m = new AudioClipModule();
+        expect(m.type).toBe('AudioClip');
+        expect(m.inputOnly).toBe(true);
+    });
+
+    test('after init, getNode() returns a node', () => {
+        const m = makeInited();
+        expect(() => m.getNode()).not.toThrow();
+    });
+
+    test('loadBuffer sets buffer, clipName, trimEnd, and calls onBufferLoad', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        const onLoad = vi.fn();
+        m.onBufferLoad = onLoad;
+        m.loadBuffer(buf, 'test.wav');
+        expect(m.buffer).toBe(buf);
+        expect(m.clipName).toBe('test.wav');
+        expect(m.params.trimEnd.value).toBeCloseTo(buf.duration, 1);
+        expect(onLoad).toHaveBeenCalledTimes(1);
+    });
+
+    test('loadBuffer preserves saved trimEnd when re-linking (trimEnd within duration)', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer(10); // 10-second buffer
+        m.params.trimEnd.value = 7;    // saved value from preset
+        m.loadBuffer(buf, 're-link.wav');
+        // trimEnd should not be overwritten if it is <= buffer.duration
+        expect(m.params.trimEnd.value).toBeCloseTo(7, 2);
+    });
+
+    test('loadBuffer resets trimEnd to duration if saved value exceeds new buffer', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer(5); // 5-second buffer
+        m.params.trimEnd.value = 99;   // saved value larger than new buffer duration
+        m.loadBuffer(buf, 'clip.wav');
+        expect(m.params.trimEnd.value).toBeCloseTo(buf.duration, 1);
+    });
+
+    test('loadBuffer resets trimStart to 0 if it would be >= new buffer duration', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer(2); // 2-second buffer
+        m.params.trimStart.value = 5;  // beyond buffer duration
+        m.loadBuffer(buf, 'clip.wav');
+        expect(m.params.trimStart.value).toBe(0);
+    });
+
+    test('play() before buffer is a no-op', () => {
+        const m = makeInited();
+        expect(() => m.play()).not.toThrow();
+        expect(m.isPlaying).toBe(false);
+    });
+
+    test('play() with buffer calls createBufferSource and start', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'test.wav');
+        const ctx = new AudioContext();
+        const srcSpy = vi.spyOn(ctx, 'createBufferSource');
+        m['ctx'] = ctx;
+        m.play();
+        expect(srcSpy).toHaveBeenCalled();
+        const src = srcSpy.mock.results[0].value;
+        expect(src.start).toHaveBeenCalled();
+        expect(m.isPlaying).toBe(true);
+    });
+
+    test('play() sets loop and trim props on source node', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer(10);
+        m.params.loop.value = true;
+        m.params.trimStart.value = 1;
+        m.params.trimEnd.value = 8;
+        m.loadBuffer(buf, 'test.wav');
+        const ctx = new AudioContext();
+        const srcSpy = vi.spyOn(ctx, 'createBufferSource');
+        m['ctx'] = ctx;
+        m.play();
+        const src = srcSpy.mock.results[0].value;
+        expect(src.loop).toBe(true);
+        expect(src.loopStart).toBe(1);
+        expect(src.loopEnd).toBe(8);
+    });
+
+    test('stop() stops playback and isPlaying becomes false', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'test.wav');
+        m.play();
+        m.stop();
+        expect(m.isPlaying).toBe(false);
+    });
+
+    test('stop() before play does not throw', () => {
+        const m = makeInited();
+        expect(() => m.stop()).not.toThrow();
+    });
+
+    test('onPlaybackEnd callback fires when playback ends naturally', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'test.wav');
+        const onEnd = vi.fn();
+        m.onPlaybackEnd = onEnd;
+        const ctx = new AudioContext();
+        const srcSpy = vi.spyOn(ctx, 'createBufferSource');
+        m['ctx'] = ctx;
+        m.play();
+        // Simulate the source node's onended firing
+        const src = srcSpy.mock.results[0].value;
+        src.onended?.();
+        expect(onEnd).toHaveBeenCalledTimes(1);
+        expect(m.isPlaying).toBe(false);
+    });
+
+    test('updatePlaybackRate does not throw when not playing', () => {
+        const m = makeInited();
+        expect(() => m.updatePlaybackRate(2.0)).not.toThrow();
+    });
+
+    test('updatePlaybackRate updates source node rate when playing', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'test.wav');
+        const ctx = new AudioContext();
+        const srcSpy = vi.spyOn(ctx, 'createBufferSource');
+        m['ctx'] = ctx;
+        m.play();
+        const src = srcSpy.mock.results[0].value;
+        m.updatePlaybackRate(1.5);
+        expect(src.playbackRate.value).toBe(1.5);
+    });
+
+    test('clear() resets buffer, clipName, and trim params', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer(5);
+        m.loadBuffer(buf, 'clip.wav');
+        m.params.trimStart.value = 1;
+        m.clear();
+        expect(m.buffer).toBeNull();
+        expect(m.clipName).toBe('');
+        expect(m.params.trimStart.value).toBe(0); // reset to default
+        expect(m.params.trimEnd.value).toBe(0);   // reset to default
+    });
+
+    test('clear() stops any playing audio', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'clip.wav');
+        m.play();
+        m.clear();
+        expect(m.isPlaying).toBe(false);
+    });
+
+    test('serialize includes clipName', () => {
+        const m = new AudioClipModule();
+        m.clipName = 'my-sample.wav';
+        const data = m.serialize();
+        expect(data.clipName).toBe('my-sample.wav');
+    });
+
+    test('serialize omits clipName when empty string', () => {
+        // clipName defaults to '' but is still serialized for restore purposes
+        const m = new AudioClipModule();
+        const data = m.serialize();
+        expect(data.clipName).toBe('');
+    });
+
+    test('deserialize restores clipName and trimStart', () => {
+        const m1 = new AudioClipModule();
+        m1.clipName = 'sample.wav';
+        m1.params.trimStart.value = 0.5;
+        const data = m1.serialize();
+        const m2 = new AudioClipModule();
+        m2.deserialize(data);
+        expect(m2.clipName).toBe('sample.wav');
+        expect(m2.params.trimStart.value).toBeCloseTo(0.5);
+    });
+
+    test('deserialize restores trimEnd', () => {
+        const m1 = new AudioClipModule();
+        m1.params.trimEnd.value = 4.2;
+        const data = m1.serialize();
+        const m2 = new AudioClipModule();
+        m2.deserialize(data);
+        expect(m2.params.trimEnd.value).toBeCloseTo(4.2);
+    });
+
+    test('deserialize restores loop param', () => {
+        const m1 = new AudioClipModule();
+        m1.params.loop.value = false;
+        const data = m1.serialize();
+        const m2 = new AudioClipModule();
+        m2.deserialize(data);
+        expect(m2.params.loop.value).toBe(false);
+    });
+
+    test('deserialize restores playbackRate param', () => {
+        const m1 = new AudioClipModule();
+        m1.params.playbackRate.value = 1.75;
+        const data = m1.serialize();
+        const m2 = new AudioClipModule();
+        m2.deserialize(data);
+        expect(m2.params.playbackRate.value).toBeCloseTo(1.75);
+    });
+
+    test('dispose stops playback and does not throw', () => {
+        const m = makeInited();
+        const buf = makeMockBuffer();
+        m.loadBuffer(buf, 'clip.wav');
+        m.play();
+        expect(() => m.dispose()).not.toThrow();
+        expect(m.isPlaying).toBe(false);
+    });
+});
+
+describe('SynthModule bypass serialization', () => {
+    test('serialize omits _bypassed when not bypassed', () => {
+        const m = new GainModule();
+        const data = m.serialize();
+        expect(data._bypassed).toBeUndefined();
+    });
+
+    test('serialize includes _bypassed:true when bypassed', () => {
+        const m = new GainModule();
+        m.init(new AudioContext());
+        m.setBypass(true);
+        const data = m.serialize();
+        expect(data._bypassed).toBe(true);
+    });
+
+    test('deserialize restores bypassed=true', () => {
+        const m1 = new GainModule();
+        m1.init(new AudioContext());
+        m1.setBypass(true);
+        const data = m1.serialize();
+        const m2 = new GainModule();
+        m2.init(new AudioContext());
+        m2.deserialize(data);
+        expect(m2.bypassed).toBe(true);
+    });
+
+    test('deserialize without _bypassed leaves bypassed=false', () => {
+        const m = new GainModule();
+        m.init(new AudioContext());
+        m.deserialize({});
+        expect(m.bypassed).toBe(false);
+    });
+
+    test('bypassed state preserved through full round-trip', () => {
+        const m1 = new FilterModule();
+        m1.init(new AudioContext());
+        m1.params.frequency.value = 2000;
+        m1.setBypass(true);
+        const data = m1.serialize();
+        const m2 = new FilterModule();
+        m2.init(new AudioContext());
+        m2.deserialize(data);
+        expect(m2.bypassed).toBe(true);
+        expect(m2.params.frequency.value).toBe(2000);
     });
 });

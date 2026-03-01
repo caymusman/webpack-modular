@@ -19,7 +19,7 @@ describe('ModulePalette', () => {
     test('renders all modules when query is empty', () => {
         renderPalette();
         const items = screen.getAllByRole('option');
-        expect(items.length).toBe(19);
+        expect(items.length).toBe(21);
         expect(screen.getByText('Oscillator')).toBeTruthy();
         expect(screen.getByText('Gain')).toBeTruthy();
         expect(screen.getByText('Recorder')).toBeTruthy();
