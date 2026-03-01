@@ -34,11 +34,13 @@ function AudioClip({ module, handleClose }: AudioClipProps) {
     loopRef.current = loop;
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         module.onBufferLoad = () => setBufferLoaded(true);
         return () => { module.onBufferLoad = null; };
     }, [module]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/immutability
         module.onPlaybackEnd = () => {
             setPlaying(false);
             playStartRef.current = null;

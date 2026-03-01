@@ -532,7 +532,7 @@ describe('AudioClip module', () => {
     });
 
     test('has a loop checkbox', () => {
-        const { container } = renderWithAudioContext(<App />);
+        renderWithAudioContext(<App />);
         addModule('Audio Clip');
         const loopCheckbox = screen.getByRole('checkbox', { name: 'Loop' });
         expect(loopCheckbox).toBeTruthy();
