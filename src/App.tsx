@@ -8,6 +8,8 @@ import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
 import { getCenterPoint } from './utils/centerPoint';
 import { createModule, MODULE_LIST } from './model/index';
+import type { SwitchModule as SwitchModuleType } from './model/modules/SwitchModule';
+import type { AudioClipModule } from './model/modules/AudioClipModule';
 import { useAudioContext } from './audio/AudioContextProvider';
 import { useMIDILearn } from './midi/MIDILearnContext';
 import { useMIDIPlayback } from './midi/useMIDIPlayback';
@@ -308,6 +310,42 @@ export default function App() {
         [outputMode, handlePatchExit, moduleCounts, audioContext, captureSnapshot, patchCords]
     );
 
+    const handleAudioFileDrop = useCallback(
+        (file: File, dropX: number, dropY: number) => {
+            const type = 'AudioClip';
+            const count = moduleCounts[type] || 0;
+            const childKey = makeModuleId(type, count);
+            setModuleCounts((prev) => ({ ...prev, [type]: count + 1 }));
+
+            const mod = createModule(type) as AudioClipModule;
+            mod.init(audioContext);
+
+            setCordCombos((prev) => ({ ...prev, [childKey]: [] }));
+
+            const newRecord: ModuleRecord = {
+                myKey: childKey,
+                filling: type,
+                name: file.name.replace(/\.[^.]+$/, '').slice(0, 24),
+                inputOnly: true,
+                position: { x: dropX, y: dropY },
+                module: mod,
+            };
+
+            setList((prev) => {
+                const newMap = new Map(prev);
+                newMap.set(childKey, newRecord);
+                captureSnapshot(newMap, patchCords);
+                return newMap;
+            });
+
+            file.arrayBuffer()
+                .then((buf) => audioContext.decodeAudioData(buf))
+                .then((audioBuf) => mod.loadBuffer(audioBuf, file.name))
+                .catch((err) => console.warn('AudioClip: failed to decode', err));
+        },
+        [moduleCounts, audioContext, captureSnapshot, patchCords]
+    );
+
     const handleClose = useCallback(
         (childKey: string) => {
             const record = list.get(childKey);
@@ -334,7 +372,8 @@ export default function App() {
                     const isTo =
                         el.toData !== null &&
                         (el.toData.tomyKey === childKey ||
-                            getBaseModuleId(el.toData.tomyKey) === childKey);
+                            getBaseModuleId(el.toData.tomyKey) === childKey ||
+                            el.toData.tomyKey.startsWith(childKey + '|'));
                     if (isFrom || isTo) {
                         toRemove.push(el);
                         if (el.toData) {
@@ -354,7 +393,9 @@ export default function App() {
                 const newCombos = { ...prev };
                 Object.keys(newCombos).forEach((key) => {
                     if (Array.isArray(newCombos[key])) {
-                        newCombos[key] = newCombos[key].filter((v) => v !== childKey);
+                        newCombos[key] = newCombos[key].filter(
+                            (v) => v !== childKey && !v.startsWith(childKey + '|')
+                        );
                     }
                 });
                 delete newCombos[childKey];
@@ -395,7 +436,9 @@ export default function App() {
                 const isFrom = el.fromData.fromModID === childKey;
                 const isTo =
                     el.toData !== null &&
-                    (el.toData.tomyKey === childKey || getBaseModuleId(el.toData.tomyKey) === childKey);
+                    (el.toData.tomyKey === childKey ||
+                        getBaseModuleId(el.toData.tomyKey) === childKey ||
+                        el.toData.tomyKey.startsWith(childKey + '|'));
                 if ((isFrom || isTo) && el.toData) {
                     try { el.fromData.audio.disconnect(el.toData.audio as AudioNode); } catch { /* ignore */ }
                 }
@@ -404,7 +447,9 @@ export default function App() {
 
             Object.keys(newCombos).forEach((key) => {
                 if (Array.isArray(newCombos[key])) {
-                    newCombos[key] = newCombos[key].filter((v) => v !== childKey);
+                    newCombos[key] = newCombos[key].filter(
+                        (v) => v !== childKey && !v.startsWith(childKey + '|')
+                    );
                 }
             });
             delete newCombos[childKey];
@@ -502,6 +547,42 @@ export default function App() {
         });
     }, [captureSnapshot]);
 
+    const removeCordsByTomyKeys = useCallback((tomyKeys: string[]) => {
+        if (tomyKeys.length === 0) return;
+        const keySet = new Set(tomyKeys);
+        let cordsAfter: PatchCord[] = [];
+        setPatchCords((prevCords) => {
+            const toRemove = prevCords.filter((el) => el.toData && keySet.has(el.toData.tomyKey));
+            toRemove.forEach((cord) => {
+                try {
+                    cord.fromData.audio.disconnect(cord.toData!.audio as AudioNode);
+                } catch {
+                    // already disconnected
+                }
+            });
+            if (toRemove.length > 0) {
+                setCordCombos((prev) => {
+                    const newCombos = { ...prev };
+                    toRemove.forEach((cord) => {
+                        const fromKey = cord.fromData.fromModID;
+                        if (newCombos[fromKey]) {
+                            newCombos[fromKey] = newCombos[fromKey].filter(
+                                (v) => v !== cord.toData!.tomyKey
+                            );
+                        }
+                    });
+                    return newCombos;
+                });
+            }
+            cordsAfter = prevCords.filter((el) => !toRemove.includes(el));
+            return cordsAfter;
+        });
+        setList((currentList) => {
+            captureSnapshot(currentList, cordsAfter);
+            return currentList;
+        });
+    }, [captureSnapshot]);
+
     /**
      * Given a module ID, returns its center position in canvas coordinates
      * by reading from the DOM (valid during/after a drag event).
@@ -536,7 +617,9 @@ export default function App() {
                 if (!cord.toData) return;
                 // Skip cords already touching this module
                 if (cord.fromData.fromModID === modID) return;
-                const toBase = getBaseModuleId(cord.toData.tomyKey);
+                const toBase = cord.toData.tomyKey.includes('|')
+                    ? cord.toData.tomyKey.split('|')[0]
+                    : getBaseModuleId(cord.toData.tomyKey);
                 if (cord.toData.tomyKey === modID || toBase === modID) return;
 
                 const d = pointToQuadBezierDist(
@@ -679,9 +762,11 @@ export default function App() {
                         };
                     }
                     if (el.toData) {
-                        const toBase = el.toData.tomyKey.includes(' ')
-                            ? getBaseModuleId(el.toData.tomyKey)
-                            : el.toData.tomyKey;
+                        const toBase = el.toData.tomyKey.includes('|')
+                            ? el.toData.tomyKey.split('|')[0]
+                            : el.toData.tomyKey.includes(' ')
+                              ? getBaseModuleId(el.toData.tomyKey)
+                              : el.toData.tomyKey;
                         if (selectedModules.has(toBase)) {
                             el.toData.toLocation = {
                                 x: el.toData.toLocation.x + dx,
@@ -702,6 +787,11 @@ export default function App() {
                             document.getElementById(modID + 'inputInner')!,
                             transform
                         );
+                    } else if (el.toData!.tomyKey.startsWith(modID + '|')) {
+                        const chElem = document.getElementById(el.toData!.tomyKey + 'inputInner');
+                        if (chElem) {
+                            el.toData!.toLocation = getCenterPoint(chElem, transform);
+                        }
                     } else if (el.toData!.tomyKey.includes(' ') && getBaseModuleId(el.toData!.tomyKey) === modID) {
                         el.toData!.toLocation = getCenterPoint(
                             document.getElementById(el.toData!.tomyKey + ' inputInner')!,
@@ -753,8 +843,11 @@ export default function App() {
                     document.getElementById(el.fromData.fromModID + 'outputInner')!,
                     transform
                 );
+                const toSuffix = el.toData!.tomyKey.endsWith(' param')
+                    ? el.toData!.tomyKey + ' inputInner'
+                    : el.toData!.tomyKey + 'inputInner';
                 el.toData!.toLocation = getCenterPoint(
-                    document.getElementById(el.toData!.tomyKey + 'inputInner')!,
+                    document.getElementById(toSuffix)!,
                     transform
                 );
             });
@@ -1018,7 +1111,12 @@ export default function App() {
 
         const tryConnect = () => {
             const allReady = pendingConnections.every((conn) => {
-                const toModBase = conn.toModID.endsWith(' param') ? getBaseModuleId(conn.toModID) : conn.toModID;
+                const chMatch = conn.toModID.match(/\|ch\d+$/);
+                const toModBase = conn.toModID.endsWith(' param')
+                    ? getBaseModuleId(conn.toModID)
+                    : chMatch
+                      ? conn.toModID.replace(/\|ch\d+$/, '')
+                      : conn.toModID;
                 if (toModBase === 'Output') return true;
 
                 const fromRecord = list.get(conn.fromModID);
@@ -1066,12 +1164,20 @@ export default function App() {
                     if (!paramNode) return;
                     toAudio = paramNode;
                 } else {
-                    const toRecord = list.get(conn.toModID);
-                    if (!toRecord) return;
-                    try {
-                        toAudio = toRecord.module.getNode();
-                    } catch {
-                        return;
+                    const chMatch = conn.toModID.match(/\|ch(\d+)$/);
+                    if (chMatch) {
+                        const baseId = conn.toModID.replace(/\|ch\d+$/, '');
+                        const toRecord = list.get(baseId);
+                        if (!toRecord) return;
+                        toAudio = (toRecord.module as SwitchModuleType).getChannelGain(parseInt(chMatch[1]));
+                    } else {
+                        const toRecord = list.get(conn.toModID);
+                        if (!toRecord) return;
+                        try {
+                            toAudio = toRecord.module.getNode();
+                        } catch {
+                            return;
+                        }
                     }
                 }
 
@@ -1440,6 +1546,27 @@ export default function App() {
                     isRubberBanding.current = false;
                     setRubberBand(null);
                 }}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    const psRect = playSpaceRef.current?.getBoundingClientRect();
+                    if (!psRect) return;
+                    const files = Array.from(e.dataTransfer.files).filter((f) =>
+                        f.type.startsWith('audio/')
+                    );
+                    files.forEach((file, idx) => {
+                        const cx =
+                            (e.clientX - psRect.left - panRef.current.x) / zoomRef.current +
+                            idx * 20;
+                        const cy =
+                            (e.clientY - psRect.top - panRef.current.y) / zoomRef.current +
+                            idx * 20;
+                        handleAudioFileDrop(file, cx - 120, cy - 60);
+                    });
+                }}
             >
                 {/* Canvas — everything inside is transformed together */}
                 <div
@@ -1498,6 +1625,7 @@ export default function App() {
                                         isSelected={selectedModules.has(myKey)}
                                         onSelect={handleSelect}
                                         onDuplicate={handleDuplicate}
+                                        onRemoveCords={removeCordsByTomyKeys}
                                     />
                                 </div>
                             </Draggable>

@@ -60,6 +60,8 @@ describe('App', () => {
         expect(names).toContain('Bitcrusher');
         expect(names).toContain('Envelope Follower');
         expect(names).toContain('MIDI Note');
+        expect(names).toContain('Switch');
+        expect(names).toContain('Audio Clip');
     });
 
     test('Output appears in palette', () => {

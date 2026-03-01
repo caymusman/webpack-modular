@@ -10,6 +10,7 @@ const mockAudioParam = () => ({
     setValueAtTime: vi.fn(),
     setTargetAtTime: vi.fn(),
     cancelScheduledValues: vi.fn(),
+    linearRampToValueAtTime: vi.fn(),
 });
 
 const mockAudioNode = () => ({
@@ -88,6 +89,10 @@ const mockBufferSourceNode = () => ({
     ...mockAudioNode(),
     buffer: null,
     loop: false,
+    loopStart: 0,
+    loopEnd: 0,
+    playbackRate: mockAudioParam(),
+    onended: null as (() => void) | null,
     start: vi.fn(),
     stop: vi.fn(),
 });

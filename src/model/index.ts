@@ -18,6 +18,8 @@ import { ScopeModule } from './modules/ScopeModule';
 import { BitcrusherModule } from './modules/BitcrusherModule';
 import { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
 import { MIDINoteModule } from './modules/MIDINoteModule';
+import { SwitchModule } from './modules/SwitchModule';
+import { AudioClipModule } from './modules/AudioClipModule';
 
 export { SynthModule } from './SynthModule';
 export { Param, NumericParam, EnumParam, BoolParam } from './Param';
@@ -40,6 +42,8 @@ export { ScopeModule } from './modules/ScopeModule';
 export { BitcrusherModule } from './modules/BitcrusherModule';
 export { EnvelopeFollowerModule } from './modules/EnvelopeFollowerModule';
 export { MIDINoteModule } from './modules/MIDINoteModule';
+export { SwitchModule } from './modules/SwitchModule';
+export { AudioClipModule } from './modules/AudioClipModule';
 
 export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean; label: string }> = [
     { type: 'Oscillator',        inputOnly: true,  label: 'Oscillator' },
@@ -61,13 +65,16 @@ export const MODULE_LIST: ReadonlyArray<{ type: string; inputOnly: boolean; labe
     { type: 'Bitcrusher',        inputOnly: false, label: 'Bitcrusher' },
     { type: 'EnvelopeFollower',  inputOnly: false, label: 'Envelope Follower' },
     { type: 'MIDINote',          inputOnly: true,  label: 'MIDI Note' },
+    { type: 'Switch',            inputOnly: true,  label: 'Switch' },
+    { type: 'AudioClip',         inputOnly: true,  label: 'Audio Clip' },
 ];
 
 export const MODULE_GROUPS: ReadonlyArray<{ label: string; types: string[] }> = [
-    { label: 'Sources',    types: ['Oscillator', 'Noise', 'LFO', 'Sequencer', 'MIDINote', 'AudioInput'] },
+    { label: 'Sources',    types: ['Oscillator', 'Noise', 'LFO', 'Sequencer', 'MIDINote', 'AudioInput', 'AudioClip'] },
     { label: 'Effects',    types: ['Gain', 'Filter', 'Panner', 'Delay', 'Distortion', 'Reverb', 'Compressor', 'Bitcrusher'] },
     { label: 'Modulators', types: ['ADSR', 'EnvelopeFollower'] },
     { label: 'Utilities',  types: ['Scope', 'Recorder', 'Output'] },
+    { label: 'Routing',    types: ['Switch'] },
 ];
 
 const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
@@ -90,6 +97,8 @@ const MODULE_CONSTRUCTORS: Record<string, () => SynthModule> = {
     Bitcrusher: () => new BitcrusherModule(),
     EnvelopeFollower: () => new EnvelopeFollowerModule(),
     MIDINote: () => new MIDINoteModule(),
+    Switch: () => new SwitchModule(),
+    AudioClip: () => new AudioClipModule(),
 };
 
 export function createModule(type: string): SynthModule {

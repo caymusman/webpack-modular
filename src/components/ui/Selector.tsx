@@ -4,10 +4,11 @@ interface SelectorProps {
     id: string;
     values: string[];
     handleClick: (val: string) => void;
+    initialValue?: string;
 }
 
-function Selector({ id, values, handleClick }: SelectorProps) {
-    const [val, setVal] = useState(values[0]);
+function Selector({ id, values, handleClick, initialValue }: SelectorProps) {
+    const [val, setVal] = useState(initialValue ?? values[0]);
     const [isOpen, setIsOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);

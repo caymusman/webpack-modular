@@ -281,3 +281,319 @@ describe('Sequencer module', () => {
         expect(container.querySelector('.sequencerDiv')).toBeNull();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Switch
+// ---------------------------------------------------------------------------
+
+describe('Switch module', () => {
+    test('renders .switchDiv after being added', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        expect(container.querySelector('.switchDiv')).toBeTruthy();
+    });
+
+    test('does NOT have a standard #inputOuter dock (inputOnly=true)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        expect(container.querySelector('#inputOuter')).toBeNull();
+    });
+
+    test('has an output send dock (not sinkOnly)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        expect(container.querySelector('#outputOuter')).toBeTruthy();
+    });
+
+    test('renders 2 channel input docks by default', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const docks = container.querySelectorAll('.switch__ch-top-dock');
+        expect(docks.length).toBe(2);
+    });
+
+    test('channel dock labels are A and B by default', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const labels = Array.from(
+            container.querySelectorAll('.switch__ch-top-dock .switch__dock-label')
+        ).map((el) => el.textContent);
+        expect(labels).toEqual(['A', 'B']);
+    });
+
+    test('has a CV input dock', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        expect(container.querySelector('.switch__cv-top-dock')).toBeTruthy();
+    });
+
+    test('CV dock label reads CV', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const cvLabel = container.querySelector('.switch__cv-top-dock .switch__dock-label');
+        expect(cvLabel?.textContent).toBe('CV');
+    });
+
+    test('channel A select button is initially active (● symbol)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const buttons = container.querySelectorAll('.switch__ch-select');
+        expect(buttons[0].textContent).toBe('●');
+        expect(buttons[1].textContent).toBe('○');
+    });
+
+    test('clicking channel B button makes it active', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const buttons = container.querySelectorAll('.switch__ch-select');
+        fireEvent.click(buttons[1]); // click B
+        expect(buttons[1].textContent).toBe('●');
+        expect(buttons[0].textContent).toBe('○');
+    });
+
+    test('active channel row has --active class', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const channels = container.querySelectorAll('.switch__channel');
+        expect(channels[0].classList.contains('switch__channel--active')).toBe(true);
+        expect(channels[1].classList.contains('switch__channel--active')).toBe(false);
+    });
+
+    test('clicking channel B row button updates active class', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const buttons = container.querySelectorAll('.switch__ch-select');
+        fireEvent.click(buttons[1]);
+        const channels = container.querySelectorAll('.switch__channel');
+        expect(channels[0].classList.contains('switch__channel--active')).toBe(false);
+        expect(channels[1].classList.contains('switch__channel--active')).toBe(true);
+    });
+
+    test('has an "Inputs" label in the header', () => {
+        renderWithAudioContext(<App />);
+        addModule('Switch');
+        expect(screen.getByText('Inputs')).toBeTruthy();
+    });
+
+    test('has a channel count selector showing "2" initially', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        expect(selector).toBeTruthy();
+        const display = selector!.querySelector('span[role="option"]');
+        expect(display?.textContent).toBe('2');
+    });
+
+    test('changing channel count to 3 renders 3 channel docks', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        const threeOption = Array.from(selector!.querySelectorAll('.selectorVal')).find(
+            (el) => el.textContent === '3'
+        );
+        fireEvent.click(threeOption!);
+        expect(container.querySelectorAll('.switch__ch-top-dock').length).toBe(3);
+    });
+
+    test('changing channel count to 4 renders 4 channel docks', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+        const fourOption = Array.from(selector!.querySelectorAll('.selectorVal')).find(
+            (el) => el.textContent === '4'
+        );
+        fireEvent.click(fourOption!);
+        expect(container.querySelectorAll('.switch__ch-top-dock').length).toBe(4);
+    });
+
+    test('reducing channel count removes extra docks', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const selector = container.querySelector('.switch__count .selectorDiv');
+
+        // First expand to 4
+        fireEvent.click(
+            Array.from(selector!.querySelectorAll('.selectorVal')).find((el) => el.textContent === '4')!
+        );
+        expect(container.querySelectorAll('.switch__ch-top-dock').length).toBe(4);
+
+        // Then reduce back to 2
+        fireEvent.click(
+            Array.from(selector!.querySelectorAll('.selectorVal')).find((el) => el.textContent === '2')!
+        );
+        expect(container.querySelectorAll('.switch__ch-top-dock').length).toBe(2);
+    });
+
+    test('has a rate slider', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const rateSlider = container.querySelector('.switch__rate input[type="range"]');
+        expect(rateSlider).toBeTruthy();
+    });
+
+    test('rate slider defaults to 0 (off)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const rateSlider = container.querySelector<HTMLInputElement>('.switch__rate input[type="range"]');
+        expect(rateSlider?.value).toBe('0');
+    });
+
+    test('rate value display shows "off" at 0', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const rateVal = container.querySelector('.switch__rate-val');
+        expect(rateVal?.textContent).toBe('off');
+    });
+
+    test('rate value display shows Hz value when non-zero', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        const rateSlider = container.querySelector('.switch__rate input[type="range"]');
+        fireEvent.change(rateSlider!, { target: { value: '5' } });
+        const rateVal = container.querySelector('.switch__rate-val');
+        expect(rateVal?.textContent).toContain('Hz');
+    });
+
+    test('closing Switch module removes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Switch');
+        fireEvent.click(screen.getByRole('button', { name: 'Close Switch' }));
+        act(() => vi.advanceTimersByTime(300));
+        expect(container.querySelector('.switchDiv')).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AudioClip
+// ---------------------------------------------------------------------------
+
+describe('AudioClip module', () => {
+    test('renders .audioClipDiv after being added', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('.audioClipDiv')).toBeTruthy();
+    });
+
+    test('does NOT have a standard #inputOuter dock (inputOnly=true)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('#inputOuter')).toBeNull();
+    });
+
+    test('has an output send dock (not sinkOnly)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('#outputOuter')).toBeTruthy();
+    });
+
+    test('shows "No file loaded" when no buffer', () => {
+        renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(screen.getByText('No file loaded')).toBeTruthy();
+    });
+
+    test('shows placeholder area when no buffer loaded', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('.audioClip__placeholder')).toBeTruthy();
+    });
+
+    test('does NOT show waveform canvas before a file is loaded', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('canvas.audioClip__wave')).toBeNull();
+    });
+
+    test('does NOT show trim inputs before a file is loaded', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('.audioClip__trim')).toBeNull();
+    });
+
+    test('play button is disabled when no buffer loaded', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const playBtn = container.querySelector<HTMLButtonElement>('.audioClip__playBtn');
+        expect(playBtn?.disabled).toBe(true);
+    });
+
+    test('play button shows ▶ initially', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const playBtn = container.querySelector('.audioClip__playBtn');
+        expect(playBtn?.textContent).toBe('▶');
+    });
+
+    test('has a load file button (folder-open icon)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('.audioClip__loadBtn')).toBeTruthy();
+        expect(container.querySelector('.audioClip__loadBtn .fa-folder-open')).toBeTruthy();
+    });
+
+    test('has a loop checkbox', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const loopCheckbox = screen.getByRole('checkbox', { name: 'Loop' });
+        expect(loopCheckbox).toBeTruthy();
+    });
+
+    test('loop checkbox defaults to checked (loop=true)', () => {
+        renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const loopCheckbox = screen.getByRole<HTMLInputElement>('checkbox', { name: 'Loop' });
+        expect(loopCheckbox.checked).toBe(true);
+    });
+
+    test('toggling loop checkbox changes its state', () => {
+        renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const loopCheckbox = screen.getByRole<HTMLInputElement>('checkbox', { name: 'Loop' });
+        fireEvent.click(loopCheckbox);
+        expect(loopCheckbox.checked).toBe(false);
+    });
+
+    test('has a playback rate slider', () => {
+        renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const rateSlider = screen.getByRole('slider', { name: 'Playback rate' });
+        expect(rateSlider).toBeTruthy();
+    });
+
+    test('rate slider defaults to 1×', () => {
+        renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const rateSlider = screen.getByRole<HTMLInputElement>('slider', { name: 'Playback rate' });
+        expect(rateSlider.value).toBe('1');
+    });
+
+    test('rate value display shows "1.00×" initially', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const rateVal = container.querySelector('.audioClip__rateVal');
+        expect(rateVal?.textContent).toBe('1.00×');
+    });
+
+    test('changing rate slider updates the display', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        const rateSlider = screen.getByRole('slider', { name: 'Playback rate' });
+        fireEvent.change(rateSlider, { target: { value: '2' } });
+        const rateVal = container.querySelector('.audioClip__rateVal');
+        expect(rateVal?.textContent).toBe('2.00×');
+    });
+
+    test('does NOT show the clear button before a file is loaded', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        expect(container.querySelector('.audioClip__clearBtn')).toBeNull();
+    });
+
+    test('closing AudioClip module removes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Audio Clip');
+        fireEvent.click(screen.getByRole('button', { name: 'Close Audio Clip' }));
+        act(() => vi.advanceTimersByTime(300));
+        expect(container.querySelector('.audioClipDiv')).toBeNull();
+    });
+});
