@@ -205,7 +205,7 @@ describe('Sequencer module', () => {
         expect(selected?.textContent).toBe('sine');
     });
 
-    test('does NOT have input dock (inputOnly is true)', () => {
+    test('does NOT have audio input dock (inputOnly is true)', () => {
         const { container } = renderWithAudioContext(<App />);
         addModule('Sequencer');
         expect(container.querySelector('#inputOuter')).toBeNull();
@@ -253,13 +253,15 @@ describe('Sequencer module', () => {
         expect((btn as HTMLButtonElement).disabled).toBe(true);
     });
 
-    test('clicking a step note cycles it up', () => {
+    test('typing a note name in the note input updates the Hz display', () => {
         const { container } = renderWithAudioContext(<App />);
         addModule('Sequencer');
-        const firstStep = container.querySelectorAll('.sequencerDiv__stepNote')[0];
-        const initialText = firstStep.textContent;
-        fireEvent.click(firstStep);
-        expect(firstStep.textContent).not.toBe(initialText);
+        const noteInput = container.querySelectorAll('.sequencerDiv__stepNote')[0] as HTMLInputElement;
+        fireEvent.change(noteInput, { target: { value: 'A4' } });
+        fireEvent.keyDown(noteInput, { key: 'Enter' });
+        // After committing A4 the Hz input remounts with the A440 frequency
+        const hzInput = container.querySelectorAll('.sequencerDiv__stepHz')[0] as HTMLInputElement;
+        expect(parseFloat(hzInput.value)).toBeCloseTo(440, 0);
     });
 
     test('clicking step toggle mutes and unmutes a step', () => {

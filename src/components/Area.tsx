@@ -302,7 +302,7 @@ const startNudgeLoop = useCallback(() => {
             case 'LFO':
                 return <LFO module={module as LFOModule} />;
             case 'Sequencer':
-                return <Sequencer module={module as SequencerModule} />;
+                return <Sequencer module={module as SequencerModule} parent={myKey} handleOutput={handleOutput} />;
             case 'Output':
                 return <OutputView module={module as OutputModule} />;
             case 'Scope':

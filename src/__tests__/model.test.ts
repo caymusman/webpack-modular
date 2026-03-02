@@ -434,6 +434,29 @@ describe('SequencerModule', () => {
         expect(m.activeSteps[8]).toBe(true);
         expect(m.activeSteps[9]).toBe(true);
     });
+
+    test('rateCVDepth param has default 60 and range 0-200', () => {
+        const m = new SequencerModule();
+        expect(m.params.rateCVDepth.value).toBe(60);
+        expect(m.params.rateCVDepth.min).toBe(0);
+        expect(m.params.rateCVDepth.max).toBe(200);
+    });
+
+    test('getParamNode returns _rateModInput after init', () => {
+        const m = new SequencerModule();
+        m.init(new AudioContext());
+        const paramNode = m.getParamNode();
+        expect(paramNode).not.toBeNull();
+        expect(paramNode).not.toBeUndefined();
+        expect(typeof paramNode!.connect).toBe('function'); // it's an AudioNode
+        expect(paramNode).not.toBe(m.getNode()); // not the main output gain node
+        m.dispose();
+    });
+
+    test('inputOnly is true (source module, no audio-through dock)', () => {
+        const m = new SequencerModule();
+        expect(m.inputOnly).toBe(true);
+    });
 });
 
 describe('ADSRModule triggerAttack / triggerRelease', () => {
@@ -638,6 +661,19 @@ describe('SwitchModule', () => {
         const m2 = new SwitchModule();
         m2.deserialize(data);
         expect(m2.params.rate.value).toBe(5);
+    });
+
+    test('setActiveChannel uses cancelScheduledValues before ramp', () => {
+        const m = new SwitchModule();
+        m.init(new AudioContext());
+        m.channelGains.forEach(g =>
+            (g.gain.cancelScheduledValues as ReturnType<typeof vi.fn>).mockClear()
+        );
+        m.setActiveChannel(1);
+        m.channelGains.forEach(g => {
+            expect(g.gain.cancelScheduledValues).toHaveBeenCalled();
+        });
+        m.dispose();
     });
 });
 
