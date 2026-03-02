@@ -16,6 +16,9 @@ export class SequencerModule extends SynthModule {
     private timeoutId: ReturnType<typeof setTimeout> | null = null;
     private _isRunning = false;
     private _currentStep = 0;
+    private _rateModInput: GainNode | null = null;
+    private _rateModAnalyser: AnalyserNode | null = null;
+    private _rateModBuffer: Float32Array<ArrayBuffer> | null = null;
 
     steps: number[] = [...DEFAULT_STEPS];
     activeSteps: boolean[] = Array(8).fill(true);
@@ -43,15 +46,21 @@ export class SequencerModule extends SynthModule {
     readonly params: Record<string, Param<unknown>> & {
         bpm: NumericParam;
         waveType: EnumParam<WaveType>;
+        rateCVDepth: NumericParam;
     } = {
-        bpm: new NumericParam(120, 30, 300),
+        bpm: new NumericParam(120, 30, 600),
         waveType: new EnumParam<WaveType>('sine', WAVE_TYPES, (node, val) => {
             (node as OscillatorNode).type = val;
         }),
+        rateCVDepth: new NumericParam(60, 0, 200),
     };
 
     get isRunning() { return this._isRunning; }
     get currentStep() { return this._currentStep; }
+
+    override getParamNode(): AudioNode | undefined {
+        return this._rateModInput ?? undefined;
+    }
 
     createNode(ctx: AudioContext): AudioNode {
         return createGainNode(ctx, 0);
@@ -72,6 +81,14 @@ export class SequencerModule extends SynthModule {
         // Output gain for bypass (mute)
         this._outputGain = ctx.createGain();
         this.node.connect(this._outputGain);
+
+        // Rate CV input: incoming patch cords land here; we sample via analyser
+        this._rateModInput = ctx.createGain();
+        this._rateModAnalyser = ctx.createAnalyser();
+        this._rateModAnalyser.fftSize = 256;
+        this._rateModBuffer = new Float32Array(this._rateModAnalyser.fftSize);
+        this._rateModInput.connect(this._rateModAnalyser);
+        // Analyser is a dead-end — we only read from it, never connect its output
 
         return this.node;
     }
@@ -97,7 +114,16 @@ export class SequencerModule extends SynthModule {
     private scheduleNext(): void {
         if (!this._isRunning || !this.ctx || !this.seqOsc || !this.node) return;
 
-        const stepDurationMs = (60 / this.params.bpm.value) * 1000;
+        // Sample CV offset from rate mod input
+        let cvOffset = 0;
+        if (this._rateModAnalyser && this._rateModBuffer) {
+            this._rateModAnalyser.getFloatTimeDomainData(this._rateModBuffer);
+            let sum = 0;
+            for (let i = 0; i < this._rateModBuffer.length; i++) sum += this._rateModBuffer[i];
+            cvOffset = (sum / this._rateModBuffer.length) * this.params.rateCVDepth.value;
+        }
+        const effectiveBpm = Math.max(1, this.params.bpm.value + cvOffset);
+        const stepDurationMs = (60 / effectiveBpm) * 1000;
         const step = this._currentStep;
         const isActive = this.activeSteps[step];
 
@@ -135,6 +161,15 @@ export class SequencerModule extends SynthModule {
             try { this.seqOsc.disconnect(); } catch { /* ignore */ }
             this.seqOsc = null;
         }
+        if (this._rateModAnalyser) {
+            try { this._rateModAnalyser.disconnect(); } catch { /* ignore */ }
+            this._rateModAnalyser = null;
+        }
+        if (this._rateModInput) {
+            try { this._rateModInput.disconnect(); } catch { /* ignore */ }
+            this._rateModInput = null;
+        }
+        this._rateModBuffer = null;
         super.dispose();
     }
 }

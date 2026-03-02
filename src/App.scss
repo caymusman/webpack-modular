@@ -1098,20 +1098,30 @@ path:focus-visible {
 //---------------------------------------- SEQUENCER MOD -------------------------------------------
 
 .sequencerDiv {
-    width: 100%;
     padding: 6px 4px;
     display: flex;
     flex-direction: column;
     gap: 6px;
 
-    &__controls {
+    &__topRow {
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 6px;
 
         #seqWaveSelector {
             z-index: 6;
+        }
+    }
+
+    #seqBpmDiv,
+    #seqRateDepthDiv {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        input[type='range'] {
+            flex: 1;
+            min-width: 0;
         }
     }
 
@@ -1163,50 +1173,28 @@ path:focus-visible {
     }
 
     &__steps {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: 3px;
     }
 
     &__step {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 2px;
-        opacity: 1;
-        transition: opacity 0.15s;
+        gap: 5px;
+        padding: 1px 2px;
+        border-left: 2px solid transparent;
+        transition: border-color 0.1s;
 
-        &--muted {
-            opacity: 0.35;
-        }
-
-        &--playing &__stepNote {
-            background-color: color.adjust($dark, $lightness: 20%);
-            color: $light;
-            box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
-        }
-    }
-
-    &__stepNote {
-        width: 100%;
-        font-size: 8px;
-        padding: 3px 1px;
-        border-radius: 3px;
-        cursor: pointer;
-        text-align: center;
-        background-color: $dark;
-        color: $light;
-        white-space: nowrap;
-        overflow: hidden;
-        transition: background-color 0.1s;
-
-        &:hover {
-            background-color: color.adjust($dark, $lightness: 10%);
+        &--playing {
+            border-left-color: $dark;
         }
     }
 
     &__stepToggle {
         width: 8px;
         height: 8px;
+        flex-shrink: 0;
         border-radius: 50%;
         border: 1.5px solid $dark;
         background: transparent;
@@ -1216,6 +1204,44 @@ path:focus-visible {
 
         &--on {
             background: $dark;
+        }
+    }
+
+    &__stepHz {
+        flex: 1;
+        min-width: 0;
+        font-size: 10px;
+        padding: 2px 4px;
+        border: 1px solid color.adjust($dark, $lightness: 20%);
+        border-radius: 3px;
+        background: $light;
+        color: $dark;
+        text-align: right;
+        font-family: monospace;
+
+        &--muted {
+            opacity: 0.4;
+        }
+    }
+
+    &__stepNote {
+        width: 38px;
+        flex-shrink: 0;
+        font-size: 10px;
+        padding: 2px 4px;
+        border: 1px solid color.adjust($dark, $lightness: 20%);
+        border-radius: 3px;
+        background: $light;
+        color: $dark;
+        text-align: center;
+        font-family: monospace;
+
+        &::placeholder {
+            opacity: 0.35;
+        }
+
+        &--muted {
+            opacity: 0.4;
         }
     }
 }
@@ -1240,9 +1266,9 @@ path:focus-visible {
     }
 }
 
-// Sequencer needs a wider drag container
+// Sequencer: fixed width, height grows with step count
 .dragDiv:has(.sequencerDiv) {
-    width: 36vw;
+    width: 26vw;
 }
 
 

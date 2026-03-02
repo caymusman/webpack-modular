@@ -96,11 +96,15 @@ export class SwitchModule extends SynthModule {
     }
 
     setActiveChannel(channel: number): void {
+        const FADE_TIME = 0.02; // 20 ms — imperceptible for typical synth signals
         const count = Math.round(this.params.channelCount.value);
         const ch = Math.max(0, Math.min(count - 1, channel));
+        const now = this.ctx?.currentTime;
         this.channelGains.forEach((g, i) => {
-            if (this.ctx) {
-                g.gain.linearRampToValueAtTime(i === ch ? 1 : 0, this.ctx.currentTime + 0.01);
+            if (this.ctx && now !== undefined) {
+                g.gain.cancelScheduledValues(now);
+                g.gain.setValueAtTime(g.gain.value, now); // anchor current position
+                g.gain.linearRampToValueAtTime(i === ch ? 1 : 0, now + FADE_TIME);
             } else {
                 g.gain.value = i === ch ? 1 : 0;
             }
