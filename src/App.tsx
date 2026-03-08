@@ -3,6 +3,7 @@ import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import AlertBox from './components/AlertBox';
 import Area from './components/Area';
 import Cord, { cablePath, cordColor } from './components/Cord';
+import GroupBox from './components/GroupBox';
 import ModulePalette from './components/ModulePalette';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
@@ -25,6 +26,8 @@ import {
     Point,
     CanvasTransform,
     HistoryEntry,
+    ModuleGroup,
+    SerializedGroup,
 } from './types';
 
 /**
@@ -76,6 +79,12 @@ export default function App() {
 
     // Multi-select
     const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
+
+    // Groups
+    const [groups, setGroups] = useState<Map<string, ModuleGroup>>(new Map());
+    const groupCounterRef = useRef(0);
+    const groupsRef = useRef(groups);
+    groupsRef.current = groups; // kept in sync every render for captureSnapshot closure
 
     // Cord insertion — ID of the cord being hovered during a module drag
     const [cordDropTarget, setCordDropTarget] = useState<string | null>(null);
@@ -133,7 +142,7 @@ export default function App() {
     // ─── Undo / Redo ────────────────────────────────────────────────────────────
 
     const captureSnapshot = useCallback(
-        (newList: Map<string, ModuleRecord>, newCords: PatchCord[]) => {
+        (newList: Map<string, ModuleRecord>, newCords: PatchCord[], overrideGroups?: Map<string, ModuleGroup>) => {
             const modules: SerializedModule[] = [];
             newList.forEach((record, key) => {
                 modules.push({
@@ -151,6 +160,17 @@ export default function App() {
                 .map((c) => ({ fromModID: c.fromData.fromModID, toModID: c.toData!.tomyKey }));
 
             const entry: HistoryEntry = { modules, connections };
+
+            // overrideGroups is provided by group-only operations (create/dissolve/delete/organize)
+            // where setGroups hasn't been processed yet, so groupsRef.current would be stale.
+            const validGroups: SerializedGroup[] = [];
+            (overrideGroups ?? groupsRef.current).forEach((g) => {
+                const validKeys = g.moduleKeys.filter((k) => newList.has(k));
+                if (validKeys.length > 0) {
+                    validGroups.push({ id: g.id, name: g.name, moduleKeys: validKeys });
+                }
+            });
+            if (validGroups.length > 0) entry.groups = validGroups;
 
             // Truncate forward history
             historyStack.current = historyStack.current.slice(0, historyIndex.current + 1);
@@ -226,6 +246,21 @@ export default function App() {
             setList(newList);
             setCordCombos(newCombos);
             setAudioIn(hasAudioIn);
+
+            if (entry.groups?.length) {
+                const restoredGroups = new Map<string, ModuleGroup>();
+                let maxNum = 0;
+                entry.groups.forEach((g) => {
+                    const valid = g.moduleKeys.filter((k) => newList.has(k));
+                    if (valid.length > 0) restoredGroups.set(g.id, { ...g, moduleKeys: valid });
+                    const n = parseInt(g.id.replace('group-', ''), 10);
+                    if (!isNaN(n) && n >= maxNum) maxNum = n + 1;
+                });
+                setGroups(restoredGroups);
+                groupCounterRef.current = maxNum;
+            } else {
+                setGroups(new Map());
+            }
 
             if (entry.connections.length > 0) {
                 setPendingConnections(entry.connections);
@@ -408,6 +443,17 @@ export default function App() {
                 return next;
             });
 
+            setGroups((prev) => {
+                const next = new Map(prev);
+                next.forEach((g, gid) => {
+                    const filtered = g.moduleKeys.filter((k) => k !== childKey);
+                    if (filtered.length === 0) next.delete(gid);
+                    else if (filtered.length !== g.moduleKeys.length)
+                        next.set(gid, { ...g, moduleKeys: filtered });
+                });
+                return next;
+            });
+
             // Capture snapshot synchronously using the list state updater
             setList((prev) => {
                 captureSnapshot(prev, cordsAfter);
@@ -463,6 +509,97 @@ export default function App() {
         setSelectedModules(new Set());
         captureSnapshot(newList, newCords);
     }, [selectedModules, list, patchCords, cordCombos, nodeRefs, captureSnapshot]);
+
+    const handleCreateGroup = useCallback(() => {
+        if (selectedModules.size === 0) return;
+        const selectedKeys = [...selectedModules].sort();
+        for (const g of groups.values()) {
+            const existing = [...g.moduleKeys].sort();
+            if (existing.length === selectedKeys.length && existing.every((k, i) => k === selectedKeys[i])) {
+                return;
+            }
+        }
+        const id = 'group-' + groupCounterRef.current++;
+        const newGroup: ModuleGroup = {
+            id,
+            name: 'Group ' + groupCounterRef.current,
+            moduleKeys: [...selectedModules],
+        };
+        const newGroups = new Map(groups).set(id, newGroup);
+        setGroups(newGroups);
+        captureSnapshot(list, patchCords, newGroups);
+    }, [selectedModules, groups, list, patchCords, captureSnapshot]);
+
+    const handleRenameGroup = useCallback((id: string, newName: string) => {
+        const newGroups = new Map(groups);
+        const g = newGroups.get(id);
+        if (g) newGroups.set(id, { ...g, name: newName });
+        setGroups(newGroups);
+        captureSnapshot(list, patchCords, newGroups);
+    }, [groups, list, patchCords, captureSnapshot]);
+
+    const handleDissolveGroup = useCallback((id: string) => {
+        const newGroups = new Map(groups);
+        newGroups.delete(id);
+        setGroups(newGroups);
+        captureSnapshot(list, patchCords, newGroups);
+    }, [groups, list, patchCords, captureSnapshot]);
+
+    const handleDeleteGroup = useCallback(
+        (id: string) => {
+            const group = groups.get(id);
+            if (!group) return;
+            const toDelete = new Set(group.moduleKeys);
+
+            const newList = new Map(list);
+            let newCords = [...patchCords];
+            const newCombos = { ...cordCombos };
+
+            toDelete.forEach((childKey) => {
+                const record = newList.get(childKey);
+                if (record) record.module.dispose();
+                nodeRefs.delete(childKey);
+                newList.delete(childKey);
+
+                newCords = newCords.filter((el) => {
+                    const isFrom = el.fromData.fromModID === childKey;
+                    const isTo =
+                        el.toData !== null &&
+                        (el.toData.tomyKey === childKey ||
+                            getBaseModuleId(el.toData.tomyKey) === childKey ||
+                            el.toData.tomyKey.startsWith(childKey + '|'));
+                    if ((isFrom || isTo) && el.toData) {
+                        try { el.fromData.audio.disconnect(el.toData.audio as AudioNode); } catch { /* ignore */ }
+                    }
+                    return !isFrom && !isTo;
+                });
+
+                Object.keys(newCombos).forEach((key) => {
+                    if (Array.isArray(newCombos[key])) {
+                        newCombos[key] = newCombos[key].filter(
+                            (v) => v !== childKey && !v.startsWith(childKey + '|')
+                        );
+                    }
+                });
+                delete newCombos[childKey];
+            });
+
+            const nextGroups = new Map(groups);
+            nextGroups.delete(id);
+
+            setList(newList);
+            setPatchCords(newCords);
+            setCordCombos(newCombos);
+            setSelectedModules((prev) => {
+                const next = new Set(prev);
+                toDelete.forEach((k) => next.delete(k));
+                return next;
+            });
+            setGroups(nextGroups);
+            captureSnapshot(newList, newCords, nextGroups);
+        },
+        [groups, list, patchCords, cordCombos, nodeRefs, captureSnapshot]
+    );
 
     const addCord = useCallback(
         (info: CordFromData) => {
@@ -598,6 +735,133 @@ export default function App() {
             y: (r.top + r.height / 2 - psRect.top - panRef.current.y) / zoomRef.current,
         };
     }, [nodeRefs]);
+
+    const handleOrganizeGroup = useCallback(
+        (id: string) => {
+            const group = groups.get(id);
+            if (!group || group.moduleKeys.length === 0) return;
+            const members = new Set(group.moduleKeys);
+
+            // 1. Get module dimensions from the visible .moduleDiv, not the dragDiv anchor
+            const modSizes = new Map<string, { w: number; h: number }>();
+            members.forEach((key) => {
+                const ref = nodeRefs.get(key);
+                const el = (ref?.current?.querySelector('.moduleDiv') as HTMLElement | null) ?? ref?.current;
+                const rect = el?.getBoundingClientRect();
+                const w = rect ? rect.width / zoomRef.current : 150;
+                const h = rect ? rect.height / zoomRef.current : 120;
+                modSizes.set(key, { w, h });
+            });
+
+            // 2. Build adjacency from patchCords (within group only)
+            const adj = new Map<string, Set<string>>();
+            const inDegree = new Map<string, number>();
+            members.forEach((k) => { adj.set(k, new Set()); inDegree.set(k, 0); });
+            patchCords.forEach((cord) => {
+                if (!cord.toData) return;
+                const from = cord.fromData.fromModID;
+                const toBase = getBaseModuleId(cord.toData.tomyKey);
+                if (members.has(from) && members.has(toBase) && from !== toBase) {
+                    if (!adj.get(from)!.has(toBase)) {
+                        adj.get(from)!.add(toBase);
+                        inDegree.set(toBase, (inDegree.get(toBase) ?? 0) + 1);
+                    }
+                }
+            });
+
+            // 3. Kahn's topological sort → depth assignment (longest path)
+            const depth = new Map<string, number>();
+            members.forEach((k) => depth.set(k, 0));
+            const queue = [...members].filter((k) => inDegree.get(k) === 0);
+            const processOrder: string[] = [];
+            while (queue.length > 0) {
+                const node = queue.shift()!;
+                processOrder.push(node);
+                adj.get(node)!.forEach((neighbor) => {
+                    const d = (depth.get(node) ?? 0) + 1;
+                    if (d > (depth.get(neighbor) ?? 0)) depth.set(neighbor, d);
+                    const deg = (inDegree.get(neighbor) ?? 1) - 1;
+                    inDegree.set(neighbor, deg);
+                    if (deg === 0) queue.push(neighbor);
+                });
+            }
+            // Cycle fallback: unprocessed nodes get depth 0
+            members.forEach((k) => { if (!processOrder.includes(k)) depth.set(k, 0); });
+
+            // 4. Group by depth
+            const byDepth = new Map<number, string[]>();
+            members.forEach((k) => {
+                const d = depth.get(k) ?? 0;
+                if (!byDepth.has(d)) byDepth.set(d, []);
+                byDepth.get(d)!.push(k);
+            });
+
+            // 5. Compute start position = current top-left of group bounds
+            let startX = Infinity, startY = Infinity;
+            members.forEach((k) => {
+                const pos = list.get(k)?.position;
+                if (pos) { startX = Math.min(startX, pos.x); startY = Math.min(startY, pos.y); }
+            });
+            if (!isFinite(startX)) return;
+
+            // 6. Assign positions (vertical flow: depth increases downward, row members spread right)
+            const H_GAP = 20, V_GAP = 30;
+            const newPositions = new Map<string, Point>();
+            let cumulativeY = startY;
+            const sortedDepths = [...byDepth.keys()].sort((a, b) => a - b);
+            sortedDepths.forEach((d) => {
+                const keys = byDepth.get(d)!;
+                const rowH = Math.max(...keys.map((k) => modSizes.get(k)?.h ?? 120));
+                let cumulativeX = startX;
+                keys.forEach((k) => {
+                    const modW = modSizes.get(k)?.w ?? 150;
+                    newPositions.set(k, { x: cumulativeX, y: cumulativeY });
+                    cumulativeX += modW + H_GAP;
+                });
+                cumulativeY += rowH + V_GAP;
+            });
+
+            // 7. Apply new positions
+            setList((prev) => {
+                const newMap = new Map(prev);
+                newPositions.forEach((pos, key) => {
+                    const rec = newMap.get(key);
+                    if (rec) newMap.set(key, { ...rec, position: pos });
+                });
+                captureSnapshot(newMap, patchCords);
+                return newMap;
+            });
+
+            // 8. Update cord endpoints after DOM renders.
+            // NOTE (known limitation — fix on a separate branch): Switch module uses
+            // non-standard cord dock IDs: `{modID}|ch{i}inputInner` for its channel
+            // inputs (2-4 per module). The queries below follow the standard
+            // `{tomyKey}inputInner` pattern, so cords plugged into Switch channel
+            // inputs won't reposition after organize. Switch's CV/param input
+            // (`{modID} param inputInner`) IS standard and will update correctly.
+            requestAnimationFrame(() => {
+                const transform = getCanvasTransform();
+                setPatchCords((prev) =>
+                    prev.map((cord) => {
+                        let next = cord;
+                        if (members.has(cord.fromData.fromModID)) {
+                            const el = document.getElementById(cord.fromData.fromModID + 'outputInner');
+                            if (el) next = { ...next, fromData: { ...next.fromData, fromLocation: getCenterPoint(el, transform) } };
+                        }
+                        if (cord.toData) {
+                            const toBase = getBaseModuleId(cord.toData.tomyKey);
+                            if (members.has(toBase)) {
+                                const el = document.getElementById(cord.toData.tomyKey + 'inputInner');
+                                if (el) next = { ...next, toData: { ...next.toData!, toLocation: getCenterPoint(el, transform) } };
+                            }
+                        }
+                        return next;
+                    })
+                );
+            });
+        },
+        [groups, list, patchCords, nodeRefs, zoomRef, getCanvasTransform, captureSnapshot]
+    );
 
     /**
      * Find the nearest eligible cord to snap a dragged module into.
@@ -820,6 +1084,7 @@ export default function App() {
             if (existing) {
                 newMap.set(modID, { ...existing, position: { x: data.x, y: data.y } });
             }
+            captureSnapshot(newMap, patchCords);
             return newMap;
         });
         setCordDropTarget(null);
@@ -832,7 +1097,7 @@ export default function App() {
                 insertIntoCord(modID, target);
             }
         }
-    }, [getModuleCanvasCenter, findCordDropTarget, insertIntoCord]);
+    }, [getModuleCanvasCenter, findCordDropTarget, insertIntoCord, captureSnapshot, patchCords]);
 
     const handleResize = useCallback(() => {
         const transform = getCanvasTransform();
@@ -1011,6 +1276,9 @@ export default function App() {
                         if (prev.size === list.size) return new Set(); // toggle off if all selected
                         return new Set([...list.keys()]);
                     });
+                } else if (e.key === 'g' || e.key === 'G') {
+                    e.preventDefault();
+                    handleCreateGroup();
                 }
             } else if (!e.altKey && !inInput) {
                 if (e.key === 'n' || e.key === 'N') {
@@ -1032,7 +1300,7 @@ export default function App() {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [toggleLearnMode, undo, redo, list, selectedModules, handleDeleteSelected, outputMode]);
+    }, [toggleLearnMode, undo, redo, list, selectedModules, handleDeleteSelected, outputMode, handleCreateGroup]);
 
 // Focus newly added module's title bar after it renders
     useEffect(() => {
@@ -1261,6 +1529,8 @@ export default function App() {
         setAudioIn(false);
         setPendingConnections(null);
         setSelectedModules(new Set());
+        setGroups(new Map());
+        groupCounterRef.current = 0;
         // Reset history to single empty snapshot
         historyStack.current = [{ modules: [], connections: [] }];
         historyIndex.current = 0;
@@ -1328,6 +1598,22 @@ export default function App() {
             setPatchSource(null);
             setAudioIn(hasAudioIn);
             setSelectedModules(new Set());
+
+            if (preset.groups?.length) {
+                const newGroups = new Map<string, ModuleGroup>();
+                let maxNum = 0;
+                preset.groups.forEach((g) => {
+                    const valid = g.moduleKeys.filter((k) => newList.has(k));
+                    if (valid.length > 0) newGroups.set(g.id, { ...g, moduleKeys: valid });
+                    const n = parseInt(g.id.replace('group-', ''), 10);
+                    if (!isNaN(n) && n >= maxNum) maxNum = n + 1;
+                });
+                setGroups(newGroups);
+                groupCounterRef.current = maxNum;
+            } else {
+                setGroups(new Map());
+                groupCounterRef.current = 0;
+            }
 
             if (preset.connections.length > 0) {
                 setPendingConnections(preset.connections);
@@ -1452,7 +1738,7 @@ export default function App() {
                         </div>
                     </div>
                 </div>
-                <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} getMIDIMappings={serializeMappings} />
+                <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} getMIDIMappings={serializeMappings} getGroups={() => groups} />
             </div>
             <div id="sidebar"></div>
             <div
@@ -1631,6 +1917,23 @@ export default function App() {
                             </Draggable>
                         );
                     })}
+
+                    {[...groups.values()].map((group) => (
+                        <GroupBox
+                            key={group.id}
+                            group={group}
+                            list={list}
+                            nodeRefs={nodeRefs}
+                            zoom={zoom}
+                            onSelectAll={() => setSelectedModules(new Set(group.moduleKeys))}
+                            onRename={handleRenameGroup}
+                            onDissolve={handleDissolveGroup}
+                            onDelete={handleDeleteGroup}
+                            onOrganize={handleOrganizeGroup}
+                        />
+                    ))}
+
+
 
                 </div>
 

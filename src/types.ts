@@ -81,14 +81,28 @@ export interface MIDIGateMapping {
 
 export type MIDIMapping = MIDICCMapping | MIDINoteMapping | MIDIGateMapping;
 
+export interface ModuleGroup {
+    id: string;
+    name: string;
+    moduleKeys: string[];
+}
+
+export interface SerializedGroup {
+    id: string;
+    name: string;
+    moduleKeys: string[];
+}
+
 export interface Preset {
     name: string;
     modules: SerializedModule[];
     connections: SerializedConnection[];
     midiMappings?: { mappings: MIDIMapping[] };
+    groups?: SerializedGroup[];
 }
 
 export interface HistoryEntry {
     modules: SerializedModule[];
     connections: SerializedConnection[];
+    groups?: SerializedGroup[];
 }

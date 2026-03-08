@@ -8,7 +8,7 @@ import {
     exportPresetFile,
     importPresetFile,
 } from '../utils/presets';
-import { PatchCord, ModuleRecord, Preset, MIDIMapping } from '../types';
+import { PatchCord, ModuleRecord, Preset, MIDIMapping, ModuleGroup } from '../types';
 
 interface PresetBarProps {
     list: Map<string, ModuleRecord>;
@@ -16,9 +16,10 @@ interface PresetBarProps {
     onLoad: (preset: Preset) => void;
     onClear: () => void;
     getMIDIMappings: () => MIDIMapping[];
+    getGroups: () => Map<string, ModuleGroup>;
 }
 
-function PresetBar({ list, patchCords, onLoad, onClear, getMIDIMappings }: PresetBarProps) {
+function PresetBar({ list, patchCords, onLoad, onClear, getMIDIMappings, getGroups }: PresetBarProps) {
     const [presetName, setPresetName] = useState('');
     const [savedPresets, setSavedPresets] = useState<string[]>(() => listPresets());
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -82,11 +83,11 @@ function PresetBar({ list, patchCords, onLoad, onClear, getMIDIMappings }: Prese
     const handleSave = useCallback(() => {
         const name = presetName.trim();
         if (!name) return;
-        const preset = serializePreset(name, list, patchCords, getMIDIMappings());
+        const preset = serializePreset(name, list, patchCords, getMIDIMappings(), getGroups());
         saveToLocalStorage(preset);
         setPresetName('');
         refreshPresets();
-    }, [presetName, list, patchCords, getMIDIMappings, refreshPresets]);
+    }, [presetName, list, patchCords, getMIDIMappings, getGroups, refreshPresets]);
 
     const handleLoadByName = useCallback(
         (name: string) => {
@@ -109,9 +110,9 @@ function PresetBar({ list, patchCords, onLoad, onClear, getMIDIMappings }: Prese
 
     const handleExport = useCallback(() => {
         const name = presetName.trim() || 'preset';
-        const preset = serializePreset(name, list, patchCords, getMIDIMappings());
+        const preset = serializePreset(name, list, patchCords, getMIDIMappings(), getGroups());
         exportPresetFile(preset);
-    }, [presetName, list, patchCords, getMIDIMappings]);
+    }, [presetName, list, patchCords, getMIDIMappings, getGroups]);
 
     const handleImport = useCallback(() => {
         fileInputRef.current?.click();

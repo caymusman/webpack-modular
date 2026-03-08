@@ -6,7 +6,7 @@ import {
     listPresets,
     deletePreset,
 } from '../utils/presets';
-import { ModuleRecord, PatchCord, MIDIMapping } from '../types';
+import { ModuleRecord, PatchCord, MIDIMapping, ModuleGroup } from '../types';
 import { GainModule } from '../model/modules/GainModule';
 import { OscillatorModule } from '../model/modules/OscillatorModule';
 import { FilterModule } from '../model/modules/FilterModule';
@@ -336,5 +336,83 @@ describe('serializePreset with MIDI mappings', () => {
         const result = deserializePreset(json);
         expect(result).not.toBeNull();
         expect(result!.midiMappings).toBeUndefined();
+    });
+});
+
+describe('serializePreset with groups', () => {
+    const emptyList = new Map<string, ModuleRecord>();
+    const noCords: PatchCord[] = [];
+
+    test('omits groups field when none provided', () => {
+        const preset = serializePreset('No Groups', emptyList, noCords);
+        expect(preset.groups).toBeUndefined();
+    });
+
+    test('omits groups field when empty map is passed', () => {
+        const preset = serializePreset('No Groups', emptyList, noCords, [], new Map());
+        expect(preset.groups).toBeUndefined();
+    });
+
+    test('includes groups when provided', () => {
+        const groups = new Map<string, ModuleGroup>();
+        groups.set('group-0', { id: 'group-0', name: 'Bass Voice', moduleKeys: ['Oscillator 0', 'Filter 0', 'Gain 0'] });
+        const preset = serializePreset('With Groups', emptyList, noCords, [], groups);
+        expect(preset.groups).toBeDefined();
+        expect(preset.groups).toHaveLength(1);
+        expect(preset.groups![0]).toEqual({ id: 'group-0', name: 'Bass Voice', moduleKeys: ['Oscillator 0', 'Filter 0', 'Gain 0'] });
+    });
+
+    test('groups round-trip through JSON serialize → deserialize', () => {
+        const groups = new Map<string, ModuleGroup>();
+        groups.set('group-0', { id: 'group-0', name: 'Patch A', moduleKeys: ['Oscillator 0', 'Gain 0'] });
+        groups.set('group-1', { id: 'group-1', name: 'Patch B', moduleKeys: ['Filter 0'] });
+        const preset = serializePreset('Round Trip', emptyList, noCords, [], groups);
+        const jsonStr = JSON.stringify(preset);
+        const restored = deserializePreset(jsonStr);
+        expect(restored).not.toBeNull();
+        expect(restored!.groups).toHaveLength(2);
+        expect(restored!.groups![0]).toEqual({ id: 'group-0', name: 'Patch A', moduleKeys: ['Oscillator 0', 'Gain 0'] });
+        expect(restored!.groups![1]).toEqual({ id: 'group-1', name: 'Patch B', moduleKeys: ['Filter 0'] });
+    });
+
+    test('backward compat: presets without groups parse correctly', () => {
+        const json = JSON.stringify({
+            name: 'Old Preset',
+            modules: [],
+            connections: [],
+        });
+        const result = deserializePreset(json);
+        expect(result).not.toBeNull();
+        expect(result!.groups).toBeUndefined();
+    });
+
+    test('deserializePreset rejects invalid group structure — non-array groups', () => {
+        const json = JSON.stringify({
+            name: 'Bad',
+            modules: [],
+            connections: [],
+            groups: 'not-an-array',
+        });
+        expect(deserializePreset(json)).toBeNull();
+    });
+
+    test('deserializePreset rejects invalid group structure — missing id', () => {
+        const json = JSON.stringify({
+            name: 'Bad',
+            modules: [],
+            connections: [],
+            groups: [{ name: 'G', moduleKeys: ['Osc 0'] }],
+        });
+        expect(deserializePreset(json)).toBeNull();
+    });
+
+    test('deserializePreset rejects invalid group structure — non-string moduleKeys', () => {
+        const json = JSON.stringify({
+            name: 'Bad',
+            modules: [],
+            connections: [],
+            groups: [{ id: 'group-0', name: 'G', moduleKeys: [42, 'Gain 0'] }],
+        });
+        expect(deserializePreset(json)).toBeNull();
     });
 });

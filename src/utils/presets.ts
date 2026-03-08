@@ -1,4 +1,4 @@
-import { Preset, SerializedModule, SerializedConnection, ModuleRecord, PatchCord, MIDIMapping } from '../types';
+import { Preset, SerializedModule, SerializedConnection, ModuleRecord, PatchCord, MIDIMapping, ModuleGroup } from '../types';
 
 const STORAGE_PREFIX = 'presets::';
 
@@ -6,7 +6,8 @@ export function serializePreset(
     name: string,
     list: Map<string, ModuleRecord>,
     patchCords: PatchCord[],
-    midiMappings: MIDIMapping[] = []
+    midiMappings: MIDIMapping[] = [],
+    groups: Map<string, ModuleGroup> = new Map()
 ): Preset {
     const modules: SerializedModule[] = [];
     list.forEach((mod) => {
@@ -33,6 +34,13 @@ export function serializePreset(
     const result: Preset = { name, modules, connections };
     if (midiMappings.length > 0) {
         result.midiMappings = { mappings: midiMappings };
+    }
+    if (groups.size > 0) {
+        result.groups = [...groups.values()].map((g) => ({
+            id: g.id,
+            name: g.name,
+            moduleKeys: [...g.moduleKeys],
+        }));
     }
     return result;
 }
@@ -67,6 +75,17 @@ export function deserializePreset(json: string): Preset | null {
         for (const conn of parsed.connections) {
             if (typeof conn.fromModID !== 'string' || typeof conn.toModID !== 'string') {
                 return null;
+            }
+        }
+        if (parsed.groups !== undefined) {
+            if (!Array.isArray(parsed.groups)) return null;
+            for (const g of parsed.groups) {
+                if (
+                    typeof g.id !== 'string' ||
+                    typeof g.name !== 'string' ||
+                    !Array.isArray(g.moduleKeys) ||
+                    !g.moduleKeys.every((k: unknown) => typeof k === 'string')
+                ) return null;
             }
         }
         return parsed as Preset;
