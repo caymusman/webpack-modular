@@ -884,6 +884,159 @@ describe('Undo / Redo', () => {
     });
 });
 
+describe('Group History', () => {
+    /** Select all modules then create a group via keyboard shortcut. */
+    function createGroup() {
+        act(() => {
+            fireEvent.keyDown(window, { key: 'a', ctrlKey: true });
+        });
+        act(() => {
+            fireEvent.keyDown(window, { key: 'g', ctrlKey: true });
+        });
+    }
+
+    test('Ctrl+Z after creating a group removes it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelector('.groupBox')).toBeNull();
+    });
+
+    test('Ctrl+Y after undoing group creation restores the group', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelector('.groupBox')).toBeNull();
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+    });
+
+    test('Ctrl+Z after dissolving a group restores it', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Dissolve Group 1' }));
+        expect(container.querySelector('.groupBox')).toBeNull();
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+    });
+
+    test('Ctrl+Z after deleting a group restores the modules and group', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delete Group 1 and all modules' }));
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
+        expect(container.querySelector('.groupBox')).toBeNull();
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+    });
+
+    test('Ctrl+Z after renaming a group reverts the name', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+
+        fireEvent.dblClick(container.querySelector('.groupBox__label')!);
+        const input = container.querySelector('.groupBox__input') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Renamed' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+        expect(container.querySelector('.groupBox__label')?.textContent).toBe('Renamed');
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+
+        expect(container.querySelector('.groupBox__label')?.textContent).toBe('Group 1');
+    });
+
+    test('organize group creates a history entry (extra undo required)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        createGroup();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Organize Group 1' }));
+
+        // First undo reverts organize — group still exists
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelector('.groupBox')).toBeTruthy();
+
+        // Second undo reverts group creation
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelector('.groupBox')).toBeNull();
+    });
+});
+
+describe('Drag History', () => {
+    test('dragging a module creates a history entry (two undos needed to remove it)', () => {
+        const { container } = renderWithAudioContext(<App />);
+        addModule('Gain');
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+
+        // Simulate drag: separate act() calls so react-draggable's setState({ dragging: true })
+        // flushes before mouseup, otherwise handleDragStop bails on !state.dragging.
+        const header = container.querySelector('.moduleDiv header')!;
+        act(() => {
+            fireEvent.mouseDown(header);
+        });
+        act(() => {
+            fireEvent.mouseUp(document);
+        });
+
+        // First Ctrl+Z undoes the drag — module is still present
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(1);
+
+        // Second Ctrl+Z undoes the module add
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        act(() => vi.advanceTimersByTime(50));
+        expect(container.querySelectorAll('.moduleDiv').length).toBe(0);
+    });
+});
+
 describe('Multi-select', () => {
     test('Ctrl+A selects all modules (adds moduleDiv--selected class)', () => {
         const { container } = renderWithAudioContext(<App />);
