@@ -11,6 +11,7 @@ interface GroupBoxProps {
     onDissolve: (id: string) => void;
     onDelete: (id: string) => void;
     onOrganize: (id: string) => void;
+    onSaveAsInstrument: (id: string) => void;
 }
 
 /**
@@ -65,7 +66,7 @@ function computeBounds(
     };
 }
 
-function GroupBox({ group, list, nodeRefs, zoom, onSelectAll, onRename, onDissolve, onDelete, onOrganize }: GroupBoxProps) {
+function GroupBox({ group, list, nodeRefs, zoom, onSelectAll, onRename, onDissolve, onDelete, onOrganize, onSaveAsInstrument }: GroupBoxProps) {
     const [renaming, setRenaming] = useState(false);
     const [draftName, setDraftName] = useState(group.name);
 
@@ -136,6 +137,15 @@ function GroupBox({ group, list, nodeRefs, zoom, onSelectAll, onRename, onDissol
                     </span>
                 )}
                 <div className="groupBox__actions">
+                    <button
+                        className="groupBox__btn"
+                        aria-label={`Save ${group.name} as instrument`}
+                        title="Save as instrument"
+                        onClick={(e) => { e.stopPropagation(); onSaveAsInstrument(group.id); }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    >
+                        <i className="fa fa-floppy-o" aria-hidden="true" />
+                    </button>
                     <button
                         className="groupBox__btn"
                         aria-label={`Organize ${group.name}`}

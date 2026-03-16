@@ -5,6 +5,7 @@ import Area from './components/Area';
 import Cord, { cablePath, cordColor } from './components/Cord';
 import GroupBox from './components/GroupBox';
 import ModulePalette from './components/ModulePalette';
+import InstrumentBar from './components/InstrumentBar';
 import PresetBar from './components/PresetBar';
 import { getModuleType, getBaseModuleId, makeModuleId } from './utils/moduleId';
 import { getCenterPoint } from './utils/centerPoint';
@@ -28,7 +29,9 @@ import {
     HistoryEntry,
     ModuleGroup,
     SerializedGroup,
+    Instrument,
 } from './types';
+import { serializeInstrument, saveInstrument } from './utils/instruments';
 
 /**
  * Minimum distance from point (px, py) to the quadratic bezier defined by
@@ -58,6 +61,16 @@ function pointToQuadBezierDist(
 /** Distance threshold (canvas px) for cord insertion snap */
 const CORD_INSERT_THRESHOLD = 30;
 
+/** Remap a toModID from an instrument using the old→new key map */
+function remapInstrumentToModID(toModID: string, idMap: Map<string, string>): string {
+    for (const [oldKey, newKey] of idMap.entries()) {
+        if (toModID === oldKey) return newKey;
+        if (toModID.startsWith(oldKey + ' ')) return newKey + toModID.slice(oldKey.length);
+        if (toModID.startsWith(oldKey + '|')) return newKey + toModID.slice(oldKey.length);
+    }
+    return toModID;
+}
+
 export default function App() {
     const audioContext = useAudioContext();
     const { learnMode, toggleLearnMode, loadMappings, serializeMappings } = useMIDILearn();
@@ -83,6 +96,7 @@ export default function App() {
     // Groups
     const [groups, setGroups] = useState<Map<string, ModuleGroup>>(new Map());
     const groupCounterRef = useRef(0);
+    const [instrumentLibraryVersion, setInstrumentLibraryVersion] = useState(0);
     const groupsRef = useRef(groups);
     groupsRef.current = groups; // kept in sync every render for captureSnapshot closure
 
@@ -599,6 +613,94 @@ export default function App() {
             captureSnapshot(newList, newCords, nextGroups);
         },
         [groups, list, patchCords, cordCombos, nodeRefs, captureSnapshot]
+    );
+
+    const handleSaveGroupAsInstrument = useCallback(
+        (groupId: string) => {
+            const instrument = serializeInstrument(groupId, list, patchCords, groups);
+            if (!instrument) return;
+            saveInstrument(instrument);
+            setInstrumentLibraryVersion((v) => v + 1);
+        },
+        [list, patchCords, groups]
+    );
+
+    const handleAddInstrument = useCallback(
+        (instrument: Instrument) => {
+            // Place modules centered in the current viewport
+            const rect = playSpaceRef.current?.getBoundingClientRect();
+            const vpW = rect?.width ?? 800;
+            const vpH = rect?.height ?? 600;
+            const offsetX = (vpW / 2 - panRef.current.x) / zoomRef.current - 60;
+            const offsetY = (vpH / 2 - panRef.current.y) / zoomRef.current - 60;
+
+            // Build old-key → new-key map
+            const idMap = new Map<string, string>();
+            const newCounts = { ...moduleCounts };
+            instrument.modules.forEach((mod) => {
+                const count = newCounts[mod.type] || 0;
+                idMap.set(mod.key, makeModuleId(mod.type, count));
+                newCounts[mod.type] = count + 1;
+            });
+
+            // Create module records
+            const newList = new Map(list);
+            const newCombos = { ...cordCombos };
+            let hasAudioIn = audioIn;
+            instrument.modules.forEach((mod) => {
+                const newKey = idMap.get(mod.key)!;
+                const synthMod = createModule(mod.type);
+                synthMod.init(audioContext);
+                if (mod.params && Object.keys(mod.params).length > 0) {
+                    synthMod.deserialize(mod.params);
+                }
+                newList.set(newKey, {
+                    myKey: newKey,
+                    filling: mod.type,
+                    name: mod.displayName ?? mod.type,
+                    inputOnly: mod.inputOnly,
+                    position: { x: mod.position.x + offsetX, y: mod.position.y + offsetY },
+                    module: synthMod,
+                });
+                newCombos[newKey] = [];
+                if (mod.type === 'AudioInput') hasAudioIn = true;
+            });
+
+            // Remap connections to new keys
+            const newConnections: SerializedConnection[] = instrument.connections.map((conn) => ({
+                fromModID: idMap.get(conn.fromModID) ?? conn.fromModID,
+                toModID: remapInstrumentToModID(conn.toModID, idMap),
+            }));
+
+            // Create a group for the placed instrument
+            const groupId = 'group-' + groupCounterRef.current++;
+            const newGroup: ModuleGroup = {
+                id: groupId,
+                name: instrument.name,
+                moduleKeys: instrument.modules.map((mod) => idMap.get(mod.key)!),
+            };
+            const newGroups = new Map(groups).set(groupId, newGroup);
+
+            setModuleCounts(newCounts);
+            setList(newList);
+            setCordCombos(newCombos);
+            setGroups(newGroups);
+            setAudioIn(hasAudioIn);
+            if (newConnections.length > 0) {
+                setPendingConnections(newConnections);
+            }
+            captureSnapshot(newList, patchCords, newGroups);
+        },
+        [
+            moduleCounts,
+            list,
+            cordCombos,
+            audioIn,
+            audioContext,
+            groups,
+            patchCords,
+            captureSnapshot,
+        ]
     );
 
     const addCord = useCallback(
@@ -1738,6 +1840,7 @@ export default function App() {
                         </div>
                     </div>
                 </div>
+                <InstrumentBar onAdd={handleAddInstrument} refreshTrigger={instrumentLibraryVersion} />
                 <PresetBar list={list} patchCords={patchCords} onLoad={loadPreset} onClear={clearAll} getMIDIMappings={serializeMappings} getGroups={() => groups} />
             </div>
             <div id="sidebar"></div>
@@ -1930,6 +2033,7 @@ export default function App() {
                             onDissolve={handleDissolveGroup}
                             onDelete={handleDeleteGroup}
                             onOrganize={handleOrganizeGroup}
+                            onSaveAsInstrument={handleSaveGroupAsInstrument}
                         />
                     ))}
 

@@ -106,3 +106,9 @@ export interface HistoryEntry {
     connections: SerializedConnection[];
     groups?: SerializedGroup[];
 }
+
+export interface Instrument {
+    name: string;
+    modules: SerializedModule[];
+    connections: SerializedConnection[];
+}
