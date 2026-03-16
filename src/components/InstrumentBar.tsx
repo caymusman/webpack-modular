@@ -24,6 +24,7 @@ function InstrumentBar({ onAdd, refreshTrigger }: InstrumentBarProps) {
     const itemRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setInstruments(listInstruments());
     }, [refreshTrigger]);
 
